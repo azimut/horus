@@ -1,31 +1,38 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main where
 
 import Control.Exception (bracket)
+import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Managed (managed, runManaged)
-import Foreign.C (CInt, CUInt)
+import Foreign.C (CInt, CUInt (CUInt), CULong (CULong))
 import qualified Graphics.Rendering.Cairo as C
 import Graphics.X11.Xlib
 import Graphics.X11.Xlib.Extras (WindowAttributes (wa_height, wa_width), getWindowAttributes)
 
 main :: IO ()
-main = do
-  withDisplay $ \display -> do
-    (w, h) <- getRootDimensions display
-    withImage display (cuint w) (cuint h) $ \image ->
-      C.withImageSurface C.FormatRGB24 (int w) (int h) $ \surface ->
-        putStrLn "foo"
+main = runManaged $ do
+  display <- managed withDisplay
+  (w, h) <- liftIO $ getRootDimensions display
+  image <- managed (withImage display (cuint w) (cuint h))
+  surface <- managed (C.withImageSurface C.FormatRGB24 (int w) (int h))
+  liftIO $ do
+    C.surfaceWriteToPNG surface "/home/sendai/test.png"
+    putStrLn "foo"
   where
     cuint i = fromIntegral i :: CUInt
     int i = fromIntegral i :: Int
 
-withImage :: Display -> CUInt -> CUInt -> (Image -> IO ()) -> IO ()
+withImage :: Display -> CUInt -> CUInt -> (Image -> IO r) -> IO r
 withImage display w h f = do
-  bracket (getImage display (defaultRootWindow display) 0 0 w h (-1) xyPixmap) destroyImage f
+  bracket (getImage display (defaultRootWindow display) 0 0 w h allPlanes zPixmap) destroyImage f
+  where
+    allPlanes = fromIntegral allPlanes_aux :: CULong
 
 getRootDimensions :: Display -> IO (CInt, CInt)
 getRootDimensions display = getDimensions display (defaultRootWindow display)
 
-withDisplay :: (Display -> IO ()) -> IO ()
+withDisplay :: (Display -> IO r) -> IO r
 withDisplay = bracket (openDisplay "") closeDisplay
 
 getDimensions :: Display -> Window -> IO (CInt, CInt)
