@@ -1,17 +1,13 @@
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeApplications #-}
 
 module Main where
 
 import Control.Concurrent (threadDelay)
 import Control.Loop (numLoop)
-import qualified Foreign as F
-import Foreign.C.Types as F
 import SDL
-import qualified SDL.Raw.Types as ST
-import qualified SDL.Raw.Video as V
+import qualified SDL.Image as Image
 import qualified Store as S
 import Win
 
@@ -24,42 +20,23 @@ main = do
   window <-
     createWindow
       "Hello SDL"
-      defaultWindow {windowInitialSize = V2 600 480}
-  winSurface <- getWindowSurface window
+      defaultWindow {windowInitialSize = V2 600 480} -- 600 480
+  SDL.showWindow window
   rootImage <- loadScreenshoot
   S.savePng rootImage "/home/sendai/test.png"
-  -- surface <- surfaceFromImage rootImage
-  -- renderer <- V.createRenderer _ (-1) 0
-  -- texture <- V.createTextureFromSurface renderer surface
+  surface <- Image.load "/home/sendai/test.png"
+  renderer <- createRenderer window (-1) defaultRenderer
+  SDL.rendererDrawColor renderer $= V4 maxBound maxBound maxBound maxBound
 
-  surfaceFillRect winSurface Nothing (V4 0 0 127 0)
+  texture <- createTextureFromSurface renderer surface
 
   numLoop @Int 1 (60 * 5) $ \n -> do
-    updateWindowSurface window
+    clear renderer
+    copy renderer texture (Just (Rectangle (P (V2 0 0)) (V2 100 100))) Nothing
+    present renderer
     setfps
     print n
 
-  freeSurface winSurface
+  destroyRenderer renderer
   destroyWindow window
   quit
-
-surfaceFromImage :: RawImage a -> IO (F.Ptr ST.Surface)
-surfaceFromImage RawImage {..} =
-  V.createRGBSurfaceFrom
-    (F.castPtr rawImagePtr)
-    (int rawImageWidth)
-    (int rawImageHeight)
-    (int rawImageDepth)
-    0
-    0
-    0
-    0
-    0
-  where
-    int i = fromIntegral i :: F.CInt
-
--- main :: IO ()
--- main = do
---   img <- W.loadScreenshoot
---   S.save img "/home/sendai/test.png"
---   putStrLn "Done!"

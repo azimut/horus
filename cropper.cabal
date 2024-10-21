@@ -30,7 +30,7 @@ executable cropper
     build-depends:
         base ^>=4.17.2.1,
         cropper,
-        sdl2,
+        sdl2, sdl2-image,
         loop
         -- vector,
         -- linear,
