@@ -19,7 +19,8 @@ data RawImage a
     rawImageBytesPerLine :: Int,
     rawImageSizeInBytes :: Int,
     rawImageWidth :: Int,
-    rawImageHeight :: Int
+    rawImageHeight :: Int,
+    rawImageDepth :: Int
   }
   deriving (Show)
 
@@ -30,6 +31,7 @@ loadScreenshoot = do
     withRootImage display $ \rootImage -> do
       bps <- int <$> getBitsPerPixel rootImage
       bpl <- int <$> getBytesPerLine rootImage
+      depth <- int <$> getDepth rootImage
       (w, h) <- getRootDimensions display
       let sizeInBytes = w * h * divInt bps 8
       rawImage <- mallocBytes sizeInBytes
@@ -42,9 +44,11 @@ loadScreenshoot = do
             rawImageBytesPerLine = bpl,
             rawImageSizeInBytes = sizeInBytes,
             rawImageWidth = w,
-            rawImageHeight = h
+            rawImageHeight = h,
+            rawImageDepth = depth
           }
   where
+    getDepth (X.Image p) = F.peekByteOff @F.CInt (F.castPtr p) (4 * szCInt + szPtr + 4 * szCInt)
     getBytesPerLine (X.Image p) = F.peekByteOff @F.CInt (F.castPtr p) (4 * szCInt + szPtr + 5 * szCInt)
     getBitsPerPixel (X.Image p) = F.peekByteOff @F.CInt (F.castPtr p) (4 * szCInt + szPtr + 6 * szCInt)
     wut (X.Image p) = F.castPtr <$> F.peek (F.plusPtr @Image @(F.Ptr F.CIntPtr) p (4 * szCInt))

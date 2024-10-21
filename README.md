@@ -9,3 +9,4 @@ createTextureFromSurface :: MonadIO m => Renderer -> Ptr Surface -> m Texture
 - [Haskell code sdl2+cairo](https://github.com/haskell-gi/haskell-gi/blob/master/cairo/examples/sdl/CairoSDL.hs)
 - [Haskell casting of Image](https://github.com/ndzik/horture/blob/2e631613e97ef1fb305de061c4e04ca3c8fced4c/src/Horture/Backend/X11/X11.hs#L37)
 - ["SDL2 doesn't really support rendering surfaces directly anymore."](https://gamedev.stackexchange.com/questions/136055/why-doesnt-sdl-surface-rendering-work-in-sdl2)
+- [X11's XImage C struct](https://tronche.com/gui/x/xlib/graphics/images.html#XImage)
