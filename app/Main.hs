@@ -116,31 +116,36 @@ draw renderer texture State {..} =
 updateEvents :: State -> [EventPayload] -> State
 updateEvents = foldr updateEvent
 
+isShifting :: KeyboardEventData -> Bool
+isShifting event =
+  SDL.keyModifierLeftShift (SDL.keysymModifier (SDL.keyboardEventKeysym event))
+    || SDL.keyModifierRightShift (SDL.keysymModifier (SDL.keyboardEventKeysym event))
+
+rotateIt :: State -> KeyboardEventData -> State
+rotateIt state event =
+  state
+    { stateRotation =
+        if isShifting event
+          then mod' (stateRotation state - 45) 360
+          else mod' (stateRotation state + 45) 360
+    }
+
 updateEvent :: EventPayload -> State -> State
 updateEvent (SDL.KeyboardEvent event) state
   | SDL.keyboardEventKeyMotion event == SDL.Pressed =
       case SDL.keysymKeycode (SDL.keyboardEventKeysym event) of
         SDL.KeycodeF ->
-          if SDL.keyModifierLeftShift (SDL.keysymModifier (SDL.keyboardEventKeysym event))
-            || SDL.keyModifierRightShift (SDL.keysymModifier (SDL.keyboardEventKeysym event))
+          if isShifting event
             then state {stateVFlip = not (stateVFlip state)}
             else state {stateHFlip = not (stateHFlip state)}
         SDL.KeycodeQ -> state {stateQuit = True}
-        SDL.KeycodeR ->
-          let newRotation = mod' (stateRotation state + 90) 360
-           in state {stateRotation = newRotation}
-        -- Zoom
+        SDL.KeycodeR -> rotateIt state event
         SDL.KeycodePlus -> zoomIn state
         SDL.KeycodeMinus -> zoomOut state
-        -- Movement Offset
-        SDL.KeycodeH ->
-          state {stateOffsetX = max 0 $ stateOffsetX state - 2}
-        SDL.KeycodeL ->
-          state {stateOffsetX = stateOffsetX state + 2}
-        SDL.KeycodeJ ->
-          state {stateOffsetY = stateOffsetY state + 2}
-        SDL.KeycodeK ->
-          state {stateOffsetY = max 0 $ stateOffsetY state - 2}
+        SDL.KeycodeH -> moveLeft state
+        SDL.KeycodeL -> moveRight state
+        SDL.KeycodeJ -> moveDown state
+        SDL.KeycodeK -> moveUp state
         _otherKey ->
           state
 updateEvent _ state = state
@@ -148,13 +153,41 @@ updateEvent _ state = state
 float2CInt :: Float -> F.CInt
 float2CInt n = fromIntegral (float2Int n) :: F.CInt
 
+moveStep :: F.CInt
+moveStep = 4
+
+moveLeft :: State -> State
+moveLeft state = state {stateOffsetX = max 0 $ stateOffsetX state - moveStep}
+
+-- FIXME
+moveRight :: State -> State
+moveRight state = state {stateOffsetX = stateOffsetX state + moveStep}
+
+-- FIXME
+moveDown :: State -> State
+moveDown state = state {stateOffsetY = stateOffsetY state + moveStep}
+
+moveUp :: State -> State
+moveUp state = state {stateOffsetY = max 0 $ stateOffsetY state - moveStep}
+
+zoomStep :: Float
+zoomStep = 0.1
+
 zoomIn :: State -> State
-zoomIn state =
-  let newZoomBy = max 0.1 $ stateZoomBy state - 0.1
-      newZoomHeight = float2CInt $ int2Float (stateTextureHeight state) * newZoomBy
-      newZoomWidth = float2CInt $ int2Float (stateTextureWidth state) * newZoomBy
-      newOffsetX = float2CInt $ int2Float (stateTextureWidth state) * (1 - newZoomBy) * 0.5
-      newOffsetY = float2CInt $ int2Float (stateTextureHeight state) * (1 - newZoomBy) * 0.5
+zoomIn state@State {..} =
+  let newZoomBy = max zoomStep $ stateZoomBy - zoomStep
+      newZoomHeight = float2CInt $ int2Float stateTextureHeight * newZoomBy
+      newZoomWidth = float2CInt $ int2Float stateTextureWidth * newZoomBy
+      newOffsetX =
+        stateOffsetX
+          + if stateZoomBy /= newZoomBy
+            then float2CInt (int2Float stateTextureWidth * zoomStep * 0.5)
+            else 0
+      newOffsetY =
+        stateOffsetY
+          + if stateZoomBy /= newZoomBy
+            then float2CInt (int2Float stateTextureHeight * zoomStep * 0.5)
+            else 0
    in state
         { stateZoomBy = newZoomBy,
           stateZoomHeight = newZoomHeight,
@@ -164,16 +197,20 @@ zoomIn state =
         }
 
 zoomOut :: State -> State
-zoomOut state =
-  let newZoomBy = min 1.0 $ stateZoomBy state + 0.1
-      newZoomHeight = float2CInt $ int2Float (stateTextureHeight state) * newZoomBy
-      newZoomWidth = float2CInt $ int2Float (stateTextureWidth state) * newZoomBy
-      maxHeight = cint (stateTextureHeight state) - stateOffsetY state
-      maxWidth = cint (stateTextureWidth state) - stateOffsetX state
+zoomOut state@State {..} =
+  let newZoomBy = min 1.0 $ stateZoomBy + zoomStep
+      newZoomHeight = float2CInt $ int2Float stateTextureHeight * newZoomBy
+      newZoomWidth = float2CInt $ int2Float stateTextureWidth * newZoomBy
+      maxHeight = cint stateTextureHeight - stateOffsetY
+      maxWidth = cint stateTextureWidth - stateOffsetX
+      newOffsetX = stateOffsetX - float2CInt (int2Float stateTextureWidth * zoomStep * 0.5)
+      newOffsetY = stateOffsetY - float2CInt (int2Float stateTextureHeight * zoomStep * 0.5)
    in state
         { stateZoomBy = newZoomBy,
           stateZoomHeight = min maxHeight newZoomHeight,
-          stateZoomWidth = min maxWidth newZoomWidth
+          stateZoomWidth = min maxWidth newZoomWidth,
+          stateOffsetX = max 0 newOffsetX,
+          stateOffsetY = max 0 newOffsetY
         }
   where
     cint i = fromIntegral i :: F.CInt
