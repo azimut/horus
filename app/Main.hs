@@ -153,19 +153,24 @@ updateEvent _ state = state
 float2CInt :: Float -> F.CInt
 float2CInt n = fromIntegral (float2Int n) :: F.CInt
 
+cint :: (Integral a) => a -> F.CInt
+cint i = fromIntegral i :: F.CInt
+
 moveStep :: F.CInt
 moveStep = 4
 
 moveLeft :: State -> State
 moveLeft state = state {stateOffsetX = max 0 $ stateOffsetX state - moveStep}
 
--- FIXME
 moveRight :: State -> State
-moveRight state = state {stateOffsetX = stateOffsetX state + moveStep}
+moveRight state@State {..} =
+  let canMove = max 0 $ cint stateTextureWidth - (stateOffsetX + cint stateZoomWidth)
+   in state {stateOffsetX = stateOffsetX + min moveStep canMove}
 
--- FIXME
 moveDown :: State -> State
-moveDown state = state {stateOffsetY = stateOffsetY state + moveStep}
+moveDown state@State {..} =
+  let canMove = max 0 $ cint stateTextureHeight - (stateOffsetY + cint stateZoomHeight)
+   in state {stateOffsetY = stateOffsetY + min moveStep canMove}
 
 moveUp :: State -> State
 moveUp state = state {stateOffsetY = max 0 $ stateOffsetY state - moveStep}
@@ -212,5 +217,3 @@ zoomOut state@State {..} =
           stateOffsetX = max 0 newOffsetX,
           stateOffsetY = max 0 newOffsetY
         }
-  where
-    cint i = fromIntegral i :: F.CInt
