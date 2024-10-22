@@ -9,7 +9,7 @@ import Control.Concurrent (threadDelay)
 import Control.Monad (unless)
 import Data.Fixed (mod')
 import qualified Foreign.C.Types as F
-import GHC.Base (divInt)
+import GHC.Float (float2Int, int2Float)
 import SDL
 import qualified SDL.Image as Image
 import qualified Store as S
@@ -29,7 +29,7 @@ main = do
   window <-
     createWindow
       "Hello SDL"
-      defaultWindow {windowInitialSize = V2 600 480} -- 600 480
+      defaultWindow {windowInitialSize = V2 640 360} -- 600 480
   SDL.showWindow window
 
   renderer <- createRenderer window (-1) defaultRenderer
@@ -44,6 +44,7 @@ main = do
         let shouldQuit = SDL.QuitEvent `elem` events
             newState = updateEvents state events
         -- unless (null events) $ print events
+        print [show $ stateZoomBy state, show $ stateZoomWidth state, show $ stateZoomHeight state]
         clear renderer
         draw renderer texture newState
         present renderer
@@ -54,28 +55,30 @@ main = do
   textureInfo <- queryTexture texture
   loop
     emptyState
-      { stateZoomOffsetMax =
-          fromIntegral
-            ( (fromIntegral (textureWidth textureInfo) :: Int) `divInt` 2
-            ) ::
-            F.CInt,
-        stateTextureHeight = textureHeight textureInfo,
-        stateTextureWidth = textureWidth textureInfo
+      { stateTextureHeight = int (textureHeight textureInfo),
+        stateTextureWidth = int (textureWidth textureInfo),
+        stateZoomWidth = textureWidth textureInfo,
+        stateZoomHeight = textureHeight textureInfo
       }
 
   destroyRenderer renderer
   destroyWindow window
   quit
+  where
+    int i = fromIntegral i :: Int
 
 data State = State
-  { stateRotation :: Double,
+  { stateRotation :: F.CDouble,
     stateQuit :: Bool,
     stateVFlip :: Bool,
     stateHFlip :: Bool,
-    stateTextureWidth :: F.CInt,
-    stateTextureHeight :: F.CInt,
-    stateZoomOffsetMax :: F.CInt,
-    stateZoomOffset :: F.CInt
+    stateTextureWidth :: Int,
+    stateTextureHeight :: Int,
+    stateZoomWidth :: F.CInt,
+    stateZoomHeight :: F.CInt,
+    stateOffsetX :: F.CInt,
+    stateOffsetY :: F.CInt,
+    stateZoomBy :: Float
   }
 
 emptyState :: State
@@ -85,10 +88,13 @@ emptyState =
       stateQuit = False,
       stateVFlip = False,
       stateHFlip = False,
-      stateZoomOffset = 0,
-      stateZoomOffsetMax = 0,
+      stateOffsetX = 0,
+      stateOffsetY = 0,
       stateTextureWidth = 0,
-      stateTextureHeight = 0
+      stateTextureHeight = 0,
+      stateZoomBy = 1,
+      stateZoomHeight = 0,
+      stateZoomWidth = 0
     }
 
 draw :: Renderer -> Texture -> State -> IO ()
@@ -98,12 +104,12 @@ draw renderer texture State {..} =
     texture
     ( Just
         ( Rectangle
-            (P (V2 stateZoomOffset stateZoomOffset))
-            (V2 (stateTextureWidth - stateZoomOffset * 2) (stateTextureHeight - stateZoomOffset * 2))
+            (P (V2 stateOffsetX stateOffsetY))
+            (V2 stateZoomWidth stateZoomHeight)
         )
     )
     Nothing
-    (F.CDouble stateRotation)
+    stateRotation
     Nothing
     (V2 stateHFlip stateVFlip)
 
@@ -123,8 +129,51 @@ updateEvent (SDL.KeyboardEvent event) state
         SDL.KeycodeR ->
           let newRotation = mod' (stateRotation state + 90) 360
            in state {stateRotation = newRotation}
-        SDL.KeycodePlus -> state {stateZoomOffset = min (stateZoomOffsetMax state) $ stateZoomOffset state + 10}
-        SDL.KeycodeMinus -> state {stateZoomOffset = max 0 $ stateZoomOffset state - 10}
+        -- Zoom
+        SDL.KeycodePlus -> zoomIn state
+        SDL.KeycodeMinus -> zoomOut state
+        -- Movement Offset
+        SDL.KeycodeH ->
+          state {stateOffsetX = max 0 $ stateOffsetX state - 2}
+        SDL.KeycodeL ->
+          state {stateOffsetX = stateOffsetX state + 2}
+        SDL.KeycodeJ ->
+          state {stateOffsetY = stateOffsetY state + 2}
+        SDL.KeycodeK ->
+          state {stateOffsetY = max 0 $ stateOffsetY state - 2}
         _otherKey ->
           state
 updateEvent _ state = state
+
+float2CInt :: Float -> F.CInt
+float2CInt n = fromIntegral (float2Int n) :: F.CInt
+
+zoomIn :: State -> State
+zoomIn state =
+  let newZoomBy = max 0.1 $ stateZoomBy state - 0.1
+      newZoomHeight = float2CInt $ int2Float (stateTextureHeight state) * newZoomBy
+      newZoomWidth = float2CInt $ int2Float (stateTextureWidth state) * newZoomBy
+      newOffsetX = float2CInt $ int2Float (stateTextureWidth state) * (1 - newZoomBy) * 0.5
+      newOffsetY = float2CInt $ int2Float (stateTextureHeight state) * (1 - newZoomBy) * 0.5
+   in state
+        { stateZoomBy = newZoomBy,
+          stateZoomHeight = newZoomHeight,
+          stateZoomWidth = newZoomWidth,
+          stateOffsetX = newOffsetX,
+          stateOffsetY = newOffsetY
+        }
+
+zoomOut :: State -> State
+zoomOut state =
+  let newZoomBy = min 1.0 $ stateZoomBy state + 0.1
+      newZoomHeight = float2CInt $ int2Float (stateTextureHeight state) * newZoomBy
+      newZoomWidth = float2CInt $ int2Float (stateTextureWidth state) * newZoomBy
+      maxHeight = cint (stateTextureHeight state) - stateOffsetY state
+      maxWidth = cint (stateTextureWidth state) - stateOffsetX state
+   in state
+        { stateZoomBy = newZoomBy,
+          stateZoomHeight = min maxHeight newZoomHeight,
+          stateZoomWidth = min maxWidth newZoomWidth
+        }
+  where
+    cint i = fromIntegral i :: F.CInt
