@@ -9,6 +9,7 @@ import Control.Concurrent (threadDelay)
 import Control.Monad (unless)
 import Data.Fixed (mod')
 import qualified Foreign.C.Types as F
+import GHC.Base (divInt)
 import SDL
 import qualified SDL.Image as Image
 import qualified Store as S
@@ -42,8 +43,7 @@ main = do
         events <- map SDL.eventPayload <$> SDL.pollEvents
         let shouldQuit = SDL.QuitEvent `elem` events
             newState = updateEvents state events
-        unless (null events) $
-          print events
+        -- unless (null events) $ print events
         clear renderer
         draw renderer texture newState
         present renderer
@@ -51,7 +51,17 @@ main = do
         unless (shouldQuit || stateQuit state) $
           loop newState
 
-  loop emptyState
+  textureInfo <- queryTexture texture
+  loop
+    emptyState
+      { stateZoomOffsetMax =
+          fromIntegral
+            ( (fromIntegral (textureWidth textureInfo) :: Int) `divInt` 2
+            ) ::
+            F.CInt,
+        stateTextureHeight = textureHeight textureInfo,
+        stateTextureWidth = textureWidth textureInfo
+      }
 
   destroyRenderer renderer
   destroyWindow window
@@ -61,7 +71,11 @@ data State = State
   { stateRotation :: Double,
     stateQuit :: Bool,
     stateVFlip :: Bool,
-    stateHFlip :: Bool
+    stateHFlip :: Bool,
+    stateTextureWidth :: F.CInt,
+    stateTextureHeight :: F.CInt,
+    stateZoomOffsetMax :: F.CInt,
+    stateZoomOffset :: F.CInt
   }
 
 emptyState :: State
@@ -70,7 +84,11 @@ emptyState =
     { stateRotation = 0,
       stateQuit = False,
       stateVFlip = False,
-      stateHFlip = False
+      stateHFlip = False,
+      stateZoomOffset = 0,
+      stateZoomOffsetMax = 0,
+      stateTextureWidth = 0,
+      stateTextureHeight = 0
     }
 
 draw :: Renderer -> Texture -> State -> IO ()
@@ -78,7 +96,12 @@ draw renderer texture State {..} =
   copyEx
     renderer
     texture
-    Nothing
+    ( Just
+        ( Rectangle
+            (P (V2 stateZoomOffset stateZoomOffset))
+            (V2 (stateTextureWidth - stateZoomOffset * 2) (stateTextureHeight - stateZoomOffset * 2))
+        )
+    )
     Nothing
     (F.CDouble stateRotation)
     Nothing
@@ -100,6 +123,8 @@ updateEvent (SDL.KeyboardEvent event) state
         SDL.KeycodeR ->
           let newRotation = mod' (stateRotation state + 90) 360
            in state {stateRotation = newRotation}
+        SDL.KeycodePlus -> state {stateZoomOffset = min (stateZoomOffsetMax state) $ stateZoomOffset state + 10}
+        SDL.KeycodeMinus -> state {stateZoomOffset = max 0 $ stateZoomOffset state - 10}
         _otherKey ->
           state
 updateEvent _ state = state
