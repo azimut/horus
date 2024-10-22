@@ -117,27 +117,27 @@ updateEvents :: State -> [EventPayload] -> State
 updateEvents = foldr updateEvent
 
 isShifting :: KeyboardEventData -> Bool
-isShifting event =
-  SDL.keyModifierLeftShift (SDL.keysymModifier (SDL.keyboardEventKeysym event))
-    || SDL.keyModifierRightShift (SDL.keysymModifier (SDL.keyboardEventKeysym event))
+isShifting event = SDL.keyModifierLeftShift keyModifier || SDL.keyModifierRightShift keyModifier
+  where
+    keyModifier = SDL.keysymModifier (SDL.keyboardEventKeysym event)
 
 rotateIt :: State -> KeyboardEventData -> State
 rotateIt state event =
-  state
-    { stateRotation =
-        if isShifting event
-          then mod' (stateRotation state - 45) 360
-          else mod' (stateRotation state + 45) 360
-    }
+  if isShifting event
+    then state {stateRotation = mod' (stateRotation state - 45) 360}
+    else state {stateRotation = mod' (stateRotation state + 45) 360}
+
+flipIt :: State -> KeyboardEventData -> State
+flipIt state event =
+  if isShifting event
+    then state {stateVFlip = not (stateVFlip state)}
+    else state {stateHFlip = not (stateHFlip state)}
 
 updateEvent :: EventPayload -> State -> State
 updateEvent (SDL.KeyboardEvent event) state
   | SDL.keyboardEventKeyMotion event == SDL.Pressed =
       case SDL.keysymKeycode (SDL.keyboardEventKeysym event) of
-        SDL.KeycodeF ->
-          if isShifting event
-            then state {stateVFlip = not (stateVFlip state)}
-            else state {stateHFlip = not (stateHFlip state)}
+        SDL.KeycodeF -> flipIt state event
         SDL.KeycodeQ -> state {stateQuit = True}
         SDL.KeycodeR -> rotateIt state event
         SDL.KeycodePlus -> zoomIn state
@@ -146,8 +146,7 @@ updateEvent (SDL.KeyboardEvent event) state
         SDL.KeycodeL -> moveRight state
         SDL.KeycodeJ -> moveDown state
         SDL.KeycodeK -> moveUp state
-        _otherKey ->
-          state
+        _otherKey -> state
 updateEvent _ state = state
 
 float2CInt :: Float -> F.CInt
@@ -206,10 +205,10 @@ zoomOut state@State {..} =
   let newZoomBy = min 1.0 $ stateZoomBy + zoomStep
       newZoomHeight = float2CInt $ int2Float stateTextureHeight * newZoomBy
       newZoomWidth = float2CInt $ int2Float stateTextureWidth * newZoomBy
-      maxHeight = cint stateTextureHeight - stateOffsetY
-      maxWidth = cint stateTextureWidth - stateOffsetX
       newOffsetX = stateOffsetX - float2CInt (int2Float stateTextureWidth * zoomStep * 0.5)
       newOffsetY = stateOffsetY - float2CInt (int2Float stateTextureHeight * zoomStep * 0.5)
+      maxHeight = cint stateTextureHeight - newOffsetY
+      maxWidth = cint stateTextureWidth - newOffsetX
    in state
         { stateZoomBy = newZoomBy,
           stateZoomHeight = min maxHeight newZoomHeight,
