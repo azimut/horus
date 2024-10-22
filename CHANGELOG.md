@@ -1,4 +1,4 @@
-# Revision history for cropper
+# Revision history for horus
 
 ## 0.1.0.0 -- YYYY-mm-dd
 
