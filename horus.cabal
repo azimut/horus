@@ -1,5 +1,5 @@
 cabal-version:   3.0
-name:            cropper
+name:            horus
 version:         0.1.0.0
 license:         MIT
 license-file:    LICENSE
@@ -24,12 +24,12 @@ library
     hs-source-dirs:   src
     default-language: Haskell2010
 
-executable cropper
+executable horus
     import:           warnings
     main-is:          Main.hs
     build-depends:
         base ^>=4.17.2.1,
-        cropper,
+        horus,
         sdl2,
         sdl2-image
         -- vector,
@@ -38,7 +38,7 @@ executable cropper
     hs-source-dirs:   app
     default-language: Haskell2010
 
-test-suite cropper-test
+test-suite horus-test
     import:           warnings
     default-language: Haskell2010
     type:             exitcode-stdio-1.0
@@ -46,4 +46,4 @@ test-suite cropper-test
     main-is:          Main.hs
     build-depends:
         base ^>=4.17.2.1,
-        cropper
+        horus
