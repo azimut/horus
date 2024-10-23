@@ -4,7 +4,7 @@ jobs:
   build:
     # https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners
     name: CI Build Binary
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04 # version binded to setup-haskell version
     steps:
       - uses: actions/checkout@v4
       - run: |
