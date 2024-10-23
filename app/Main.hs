@@ -7,8 +7,6 @@ import Control.Concurrent (threadDelay)
 import Control.Monad (unless, when)
 import Foreign.C (CInt)
 import SDL
-import qualified SDL.Image as Image
-import qualified Store as S
 import UI.Events
 import UI.Shoot
 import UI.State
@@ -19,9 +17,8 @@ setfps = threadDelay 16_000 -- 60fps
 
 main :: IO ()
 main = do
-  -- Screenshot before drawing SDL window
+  -- Take screenshot before drawing SDL window
   rootImage <- loadScreenshoot
-  S.savePng rootImage "/home/sendai/test.png"
 
   initializeAll
 
@@ -32,13 +29,14 @@ main = do
         { windowInitialSize = V2 (cint (rawImageWidth rootImage)) (cint (rawImageHeight rootImage)), -- 640 360 / 600 480
           windowMode = Fullscreen
         }
-  SDL.showWindow window
 
   renderer <- createRenderer window (-1) defaultRenderer
   SDL.rendererDrawColor renderer $= V4 0 0 0 0
 
-  surface <- Image.load "/home/sendai/test.png"
+  surface <- surfaceFromPointer (rawImagePtr rootImage) (rawImageWidth rootImage) (rawImageHeight rootImage)
   texture <- createTextureFromSurface renderer surface
+
+  SDL.showWindow window
 
   let loop state = do
         events <- map SDL.eventPayload <$> SDL.pollEvents

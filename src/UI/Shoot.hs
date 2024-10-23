@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module UI.Shoot (takeScreenshoot, draw) where
+module UI.Shoot (takeScreenshoot, draw, surfaceFromPointer) where
 
 import Control.Exception.Safe (bracket)
 import Control.Monad (void)
@@ -11,6 +11,15 @@ import qualified SDL.Internal.Types as SINT
 import qualified SDL.Raw.Enum as SENUM
 import qualified SDL.Raw.Video as SRAW
 import UI.State (State (..))
+
+surfaceFromPointer :: F.Ptr a -> Int -> Int -> IO Surface
+surfaceFromPointer x width height = do
+  surface <- createRGBSurface (V2 (cint width) (cint height)) ARGB8888
+  pixels <- surfacePixels surface
+  F.copyBytes pixels (F.castPtr x) (width * height * 4)
+  return surface
+  where
+    cint i = fromIntegral i :: F.CInt
 
 takeScreenshoot :: FilePath -> Surface -> State -> IO ()
 takeScreenshoot filename texSurface state = do
