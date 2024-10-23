@@ -1,0 +1,18 @@
+name: CI Build
+on: [push]
+jobs:
+  build:
+    # https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners
+    name: CI Build Binary
+    runs-on: ubuntu-22.04 # 22 needed for haskell's SDL bindings build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install OS dependencies
+        run: |
+          sudo apt update -y
+          sudo apt install -y libsdl2-dev libsdl2-image-dev libcairo2-dev libx11-dev libxext-dev libxinerama-dev libxrandr-dev libxss-dev
+      - uses: haskell-actions/setup@v2
+        with:
+          ghc-version: '9.4.8'
+          cabal-version: '3.10.3.0'
+      - run: cabal build
