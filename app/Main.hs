@@ -6,6 +6,7 @@
 module Main where
 
 import Control.Concurrent (threadDelay)
+import Control.Exception (bracket)
 import Control.Monad (unless, void, when)
 import Data.Fixed (mod')
 import qualified Foreign as F
@@ -33,7 +34,7 @@ main = do
   window <-
     createWindow
       "Hello SDL"
-      defaultWindow {windowInitialSize = V2 640 360} -- 600 480
+      defaultWindow {windowInitialSize = V2 640 360} -- 640 360 / 600 480
   SDL.showWindow window
 
   renderer <- createRenderer window (-1) defaultRenderer
@@ -41,7 +42,6 @@ main = do
 
   surface <- Image.load "/home/sendai/test.png"
   texture <- createTextureFromSurface renderer surface
-  SDL.freeSurface surface
 
   let loop state = do
         events <- map SDL.eventPayload <$> SDL.pollEvents
@@ -52,19 +52,9 @@ main = do
         present renderer
         setfps
         when (stateScreenshootIt newState) $ do
-          putStrLn "???"
-          tmpSurface <- createRGBSurface (V2 640 360) ARGB8888 -- !
-          pixels <- surfacePixels tmpSurface
-          void $ SRAW.renderReadPixels (r renderer) F.nullPtr SENUM.SDL_PIXELFORMAT_ARGB8888 pixels (640 * 4) -- !
-          F.withCString "/home/sendai/foo.bmp" $ \path ->
-            void $ SRAW.saveBMP (s tmpSurface) path
-          putStrLn "w00t!"
-
+          takeScreenshoot "/home/sendai/new.bmp" surface state
         unless (shouldQuit || stateQuit state) $
           loop newState {stateScreenshootIt = False}
-        where
-          r (SINT.Renderer rr) = rr
-          s (Surface ss _) = ss
 
   textureInfo <- queryTexture texture
   loop
@@ -233,3 +223,28 @@ zoomOut state@State {..} =
           stateOffsetX = max 0 newOffsetX,
           stateOffsetY = max 0 newOffsetY
         }
+
+withRGBSurface :: V2 F.CInt -> PixelFormat -> (Surface -> IO ()) -> IO ()
+withRGBSurface dimensions format =
+  bracket (createRGBSurface dimensions format) freeSurface
+
+withSRenderer :: Surface -> (Renderer -> IO ()) -> IO ()
+withSRenderer surface =
+  bracket (createSoftwareRenderer surface) destroyRenderer
+
+takeScreenshoot :: FilePath -> Surface -> State -> IO ()
+takeScreenshoot filename texSurface state = do
+  let (width, height) = (stateZoomWidth state, stateZoomHeight state)
+  putStrLn "Screenshooting...."
+  withRGBSurface (V2 width height) ARGB8888 $ \surface ->
+    withSRenderer surface $ \renderer -> do
+      tmpTexture <- createTextureFromSurface renderer texSurface
+      draw renderer tmpTexture state
+      pixels <- surfacePixels surface
+      void $ SRAW.renderReadPixels (r renderer) F.nullPtr SENUM.SDL_PIXELFORMAT_ARGB8888 pixels (width * 4)
+      F.withCString filename $ \cFilename ->
+        void $ SRAW.saveBMP (s surface) cFilename
+  putStrLn "Done!"
+  where
+    r (SINT.Renderer rr) = rr
+    s (Surface ss _) = ss
