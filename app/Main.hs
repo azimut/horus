@@ -6,12 +6,16 @@
 module Main where
 
 import Control.Concurrent (threadDelay)
-import Control.Monad (unless)
+import Control.Monad (unless, void, when)
 import Data.Fixed (mod')
-import qualified Foreign.C.Types as F
+import qualified Foreign as F
+import qualified Foreign.C as F
 import GHC.Float (float2Int, int2Float)
 import SDL
 import qualified SDL.Image as Image
+import qualified SDL.Internal.Types as SINT
+import qualified SDL.Raw.Enum as SENUM
+import qualified SDL.Raw.Video as SRAW
 import qualified Store as S
 import Win
 
@@ -43,14 +47,24 @@ main = do
         events <- map SDL.eventPayload <$> SDL.pollEvents
         let shouldQuit = SDL.QuitEvent `elem` events
             newState = updateEvents state events
-        -- unless (null events) $ print events
-        print [show $ stateZoomBy state, show $ stateZoomWidth state, show $ stateZoomHeight state]
         clear renderer
         draw renderer texture newState
         present renderer
         setfps
+        when (stateScreenshootIt newState) $ do
+          putStrLn "???"
+          tmpSurface <- createRGBSurface (V2 640 360) ARGB8888 -- !
+          pixels <- surfacePixels tmpSurface
+          void $ SRAW.renderReadPixels (r renderer) F.nullPtr SENUM.SDL_PIXELFORMAT_ARGB8888 pixels (640 * 4) -- !
+          F.withCString "/home/sendai/foo.bmp" $ \path ->
+            void $ SRAW.saveBMP (s tmpSurface) path
+          putStrLn "w00t!"
+
         unless (shouldQuit || stateQuit state) $
-          loop newState
+          loop newState {stateScreenshootIt = False}
+        where
+          r (SINT.Renderer rr) = rr
+          s (Surface ss _) = ss
 
   textureInfo <- queryTexture texture
   loop
@@ -78,7 +92,8 @@ data State = State
     stateZoomHeight :: F.CInt,
     stateOffsetX :: F.CInt,
     stateOffsetY :: F.CInt,
-    stateZoomBy :: Float
+    stateZoomBy :: Float,
+    stateScreenshootIt :: Bool
   }
 
 emptyState :: State
@@ -94,7 +109,8 @@ emptyState =
       stateTextureHeight = 0,
       stateZoomBy = 1,
       stateZoomHeight = 0,
-      stateZoomWidth = 0
+      stateZoomWidth = 0,
+      stateScreenshootIt = False
     }
 
 draw :: Renderer -> Texture -> State -> IO ()
@@ -137,6 +153,7 @@ updateEvent :: EventPayload -> State -> State
 updateEvent (SDL.KeyboardEvent event) state
   | SDL.keyboardEventKeyMotion event == SDL.Pressed =
       case SDL.keysymKeycode (SDL.keyboardEventKeysym event) of
+        SDL.KeycodeS -> state {stateScreenshootIt = True}
         SDL.KeycodeF -> flipIt state event
         SDL.KeycodeQ -> state {stateQuit = True}
         SDL.KeycodeR -> rotateIt state event
