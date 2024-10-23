@@ -5,6 +5,7 @@ module Main where
 
 import Control.Concurrent (threadDelay)
 import Control.Monad (unless, when)
+import Foreign.C (CInt)
 import SDL
 import qualified SDL.Image as Image
 import qualified Store as S
@@ -27,7 +28,10 @@ main = do
   window <-
     createWindow
       "Hello SDL"
-      defaultWindow {windowInitialSize = V2 640 360} -- 640 360 / 600 480
+      defaultWindow
+        { windowInitialSize = V2 (cint (rawImageWidth rootImage)) (cint (rawImageHeight rootImage)), -- 640 360 / 600 480
+          windowMode = Fullscreen
+        }
   SDL.showWindow window
 
   renderer <- createRenderer window (-1) defaultRenderer
@@ -46,8 +50,8 @@ main = do
         setfps
         when (stateScreenshootIt newState) $ do
           takeScreenshoot "/home/sendai/shoot.bmp" surface state
-        unless (shouldQuit || stateQuit state) $
-          loop newState {stateScreenshootIt = False}
+        unless (shouldQuit || stateQuit state || stateScreenshootIt newState) $
+          loop newState
 
   textureInfo <- queryTexture texture
   loop
@@ -58,8 +62,10 @@ main = do
         stateZoomHeight = textureHeight textureInfo
       }
 
+  freeSurface surface
   destroyRenderer renderer
   destroyWindow window
   quit
   where
     int i = fromIntegral i :: Int
+    cint i = fromIntegral i :: CInt

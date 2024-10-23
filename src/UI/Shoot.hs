@@ -2,7 +2,7 @@
 
 module UI.Shoot (takeScreenshoot, draw) where
 
-import Control.Exception (bracket)
+import Control.Exception.Safe (bracket)
 import Control.Monad (void)
 import qualified Foreign as F
 import qualified Foreign.C as F
