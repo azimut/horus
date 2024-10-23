@@ -13,7 +13,7 @@ common warnings
 
 library
     import:           warnings
-    exposed-modules:  Win, Store, UI.State, UI.Zoom, UI.Shoot
+    exposed-modules:  Win, Store, UI.State, UI.Zoom, UI.Shoot, UI.Movement, UI.Events
     build-depends:    base ^>=4.17.2.1,
                       cairo,
                       managed,

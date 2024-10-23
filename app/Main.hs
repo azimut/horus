@@ -1,19 +1,16 @@
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 
 module Main where
 
 import Control.Concurrent (threadDelay)
 import Control.Monad (unless, when)
-import Data.Fixed (mod')
-import qualified Foreign.C as F
 import SDL
 import qualified SDL.Image as Image
 import qualified Store as S
+import UI.Events
 import UI.Shoot
 import UI.State
-import UI.Zoom
 import Win
 
 setfps :: IO ()
@@ -66,62 +63,3 @@ main = do
   quit
   where
     int i = fromIntegral i :: Int
-
-updateEvents :: State -> [EventPayload] -> State
-updateEvents = foldr updateEvent
-
-isShifting :: KeyboardEventData -> Bool
-isShifting event = SDL.keyModifierLeftShift keyModifier || SDL.keyModifierRightShift keyModifier
-  where
-    keyModifier = SDL.keysymModifier (SDL.keyboardEventKeysym event)
-
-rotateIt :: State -> KeyboardEventData -> State
-rotateIt state event =
-  if isShifting event
-    then state {stateRotation = mod' (stateRotation state - 45) 360}
-    else state {stateRotation = mod' (stateRotation state + 45) 360}
-
-flipIt :: State -> KeyboardEventData -> State
-flipIt state event =
-  if isShifting event
-    then state {stateVFlip = not (stateVFlip state)}
-    else state {stateHFlip = not (stateHFlip state)}
-
-updateEvent :: EventPayload -> State -> State
-updateEvent (SDL.KeyboardEvent event) state
-  | SDL.keyboardEventKeyMotion event == SDL.Pressed =
-      case SDL.keysymKeycode (SDL.keyboardEventKeysym event) of
-        SDL.KeycodeS -> state {stateScreenshootIt = True}
-        SDL.KeycodeF -> flipIt state event
-        SDL.KeycodeQ -> state {stateQuit = True}
-        SDL.KeycodeR -> rotateIt state event
-        SDL.KeycodePlus -> zoomIn state
-        SDL.KeycodeMinus -> zoomOut state
-        SDL.KeycodeH -> moveLeft state
-        SDL.KeycodeL -> moveRight state
-        SDL.KeycodeJ -> moveDown state
-        SDL.KeycodeK -> moveUp state
-        _otherKey -> state
-updateEvent _ state = state
-
-cint :: (Integral a) => a -> F.CInt
-cint i = fromIntegral i :: F.CInt
-
-moveStep :: F.CInt
-moveStep = 4
-
-moveLeft :: State -> State
-moveLeft state = state {stateOffsetX = max 0 $ stateOffsetX state - moveStep}
-
-moveRight :: State -> State
-moveRight state@State {..} =
-  let canMove = max 0 $ cint stateTextureWidth - (stateOffsetX + cint stateZoomWidth)
-   in state {stateOffsetX = stateOffsetX + min moveStep canMove}
-
-moveDown :: State -> State
-moveDown state@State {..} =
-  let canMove = max 0 $ cint stateTextureHeight - (stateOffsetY + cint stateZoomHeight)
-   in state {stateOffsetY = stateOffsetY + min moveStep canMove}
-
-moveUp :: State -> State
-moveUp state = state {stateOffsetY = max 0 $ stateOffsetY state - moveStep}
