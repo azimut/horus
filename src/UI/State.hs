@@ -18,6 +18,7 @@ data State = State
     stateZoomBy :: Float,
     stateScreenshootIt :: Bool
   }
+  deriving (Show)
 
 emptyState :: State
 emptyState =

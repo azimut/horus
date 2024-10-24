@@ -28,6 +28,11 @@ updateEvent (SDL.KeyboardEvent event) state
         SDL.KeycodeJ -> moveDown state
         SDL.KeycodeK -> moveUp state
         _otherKey -> state
+updateEvent (SDL.MouseWheelEvent event) state =
+  case SDL.mouseWheelEventPos event of
+    (V2 0 1) -> zoomIn state
+    (V2 0 (-1)) -> zoomOut state
+    _anyPos -> error "wacky mouse-wheel value"
 updateEvent _ state = state
 
 isShifting :: KeyboardEventData -> Bool
