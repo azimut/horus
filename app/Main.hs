@@ -20,7 +20,7 @@ main = do
   -- Take screenshot before drawing SDL window
   rootImage <- loadScreenshoot
 
-  initializeAll
+  initialize [InitVideo]
 
   window <-
     createWindow
@@ -29,14 +29,22 @@ main = do
         { windowInitialSize = V2 (cint (rawImageWidth rootImage)) (cint (rawImageHeight rootImage)), -- 640 360 / 600 480
           windowMode = Fullscreen
         }
-
+  SDL.showWindow window
   renderer <- createRenderer window (-1) defaultRenderer
-  SDL.rendererDrawColor renderer $= V4 0 0 0 0
-
   surface <- surfaceFromPointer (rawImagePtr rootImage) (rawImageWidth rootImage) (rawImageHeight rootImage)
   texture <- createTextureFromSurface renderer surface
+  textureInfo <- queryTexture texture
+  let initialState =
+        emptyState
+          { stateTextureHeight = int (textureHeight textureInfo),
+            stateTextureWidth = int (textureWidth textureInfo),
+            stateZoomWidth = textureWidth textureInfo,
+            stateZoomHeight = textureHeight textureInfo
+          }
+  draw renderer texture initialState
+  present renderer
 
-  SDL.showWindow window
+  SDL.rendererDrawColor renderer $= V4 0 0 0 0
 
   let loop state = do
         events <- map SDL.eventPayload <$> SDL.pollEvents
@@ -51,14 +59,7 @@ main = do
         unless (shouldQuit || stateQuit state || stateScreenshootIt newState) $
           loop newState
 
-  textureInfo <- queryTexture texture
-  loop
-    emptyState
-      { stateTextureHeight = int (textureHeight textureInfo),
-        stateTextureWidth = int (textureWidth textureInfo),
-        stateZoomWidth = textureWidth textureInfo,
-        stateZoomHeight = textureHeight textureInfo
-      }
+  loop initialState
 
   freeSurface surface
   destroyRenderer renderer
