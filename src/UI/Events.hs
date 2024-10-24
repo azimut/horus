@@ -13,12 +13,16 @@ updateEvent :: EventPayload -> State -> State
 updateEvent (SDL.KeyboardEvent event) state
   | SDL.keyboardEventKeyMotion event == SDL.Pressed =
       case SDL.keysymKeycode (SDL.keyboardEventKeysym event) of
+        SDL.KeycodeQ -> state {stateQuit = True}
         SDL.KeycodeS -> state {stateScreenshootIt = True}
         SDL.KeycodeF -> flipIt state event
-        SDL.KeycodeQ -> state {stateQuit = True}
         SDL.KeycodeR -> rotateIt state event
         SDL.KeycodePlus -> zoomIn state
         SDL.KeycodeMinus -> zoomOut state
+        SDL.KeycodeLeft -> moveLeft state
+        SDL.KeycodeRight -> moveRight state
+        SDL.KeycodeDown -> moveDown state
+        SDL.KeycodeUp -> moveUp state
         SDL.KeycodeH -> moveLeft state
         SDL.KeycodeL -> moveRight state
         SDL.KeycodeJ -> moveDown state
