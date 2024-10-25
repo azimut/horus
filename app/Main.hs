@@ -13,6 +13,9 @@ import UI.Shoot (surfaceFromPointer, takeScreenshoot)
 import UI.State (State (..), emptyState)
 import Win (RawImage (..), loadScreenshoot)
 
+saveFilename :: FilePath
+saveFilename = "/home/sendai/shoot.png"
+
 setfps :: IO ()
 setfps = threadDelay 16_000 -- 60fps
 
@@ -56,7 +59,7 @@ main = do
         present renderer
         setfps
         when (stateScreenshootIt newState) $ do
-          takeScreenshoot "/home/sendai/shoot.bmp" surface state
+          takeScreenshoot saveFilename surface newState
         unless (shouldQuit || stateQuit state || stateScreenshootIt newState) $
           loop newState
 
