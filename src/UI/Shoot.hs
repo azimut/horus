@@ -9,6 +9,7 @@ import SDL
 import qualified SDL.Internal.Types as SINT
 import qualified SDL.Raw.Enum as SENUM
 import qualified SDL.Raw.Video as SRAW
+import System.Process (spawnProcess)
 import UI.Draw (draw)
 import UI.State (State (..))
 
@@ -33,6 +34,7 @@ takeScreenshoot filename texSurface state = do
       void $ SRAW.renderReadPixels (r renderer) F.nullPtr SENUM.SDL_PIXELFORMAT_ARGB8888 pixels (width * 4)
       C.withImageSurfaceForData (F.castPtr pixels) C.FormatRGB24 (int width) (int height) (int (width * 4)) $ \iSurface -> do
         C.surfaceWriteToPNG iSurface filename
+        void $ spawnProcess "/bin/xclip" ["-selection", "clipboard", "-t", "image/png", "-i", filename]
   putStrLn "Done!"
   where
     r (SINT.Renderer rr) = rr
