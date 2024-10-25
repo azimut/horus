@@ -7,10 +7,11 @@ import Control.Concurrent (threadDelay)
 import Control.Monad (unless, when)
 import Foreign.C (CInt)
 import SDL
-import UI.Events
-import UI.Shoot
-import UI.State
-import Win
+import UI.Draw (draw)
+import UI.Events (updateEvents)
+import UI.Shoot (surfaceFromPointer, takeScreenshoot)
+import UI.State (State (..), emptyState)
+import Win (RawImage (..), loadScreenshoot)
 
 setfps :: IO ()
 setfps = threadDelay 16_000 -- 60fps

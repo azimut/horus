@@ -1,6 +1,4 @@
-{-# LANGUAGE RecordWildCards #-}
-
-module UI.Shoot (takeScreenshoot, draw, surfaceFromPointer) where
+module UI.Shoot (takeScreenshoot, surfaceFromPointer) where
 
 import Control.Exception.Safe (bracket)
 import Control.Monad (void)
@@ -10,6 +8,7 @@ import SDL
 import qualified SDL.Internal.Types as SINT
 import qualified SDL.Raw.Enum as SENUM
 import qualified SDL.Raw.Video as SRAW
+import UI.Draw (draw)
 import UI.State (State (..))
 
 surfaceFromPointer :: F.Ptr a -> Int -> Int -> IO Surface
@@ -37,22 +36,6 @@ takeScreenshoot filename texSurface state = do
   where
     r (SINT.Renderer rr) = rr
     s (Surface ss _) = ss
-
-draw :: Renderer -> Texture -> State -> IO ()
-draw renderer texture State {..} =
-  copyEx
-    renderer
-    texture
-    ( Just
-        ( Rectangle
-            (P (V2 stateOffsetX stateOffsetY))
-            (V2 stateZoomWidth stateZoomHeight)
-        )
-    )
-    Nothing
-    stateRotation
-    Nothing
-    (V2 stateHFlip stateVFlip)
 
 withRGBSurface :: V2 F.CInt -> PixelFormat -> (Surface -> IO ()) -> IO ()
 withRGBSurface dimensions format =
