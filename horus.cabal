@@ -30,7 +30,6 @@ executable horus
         base ^>=4.17.2.1,
         horus,
         sdl2,
-        sdl2-image
         -- vector,
         -- linear,
 
