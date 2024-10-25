@@ -10,7 +10,7 @@ import SDL
 import UI.Draw (draw)
 import UI.Events (updateEvents)
 import UI.Shoot (surfaceFromPointer, takeScreenshoot)
-import UI.State (State (..), emptyState)
+import UI.State (State (..), newState)
 import Win (RawImage (..), loadScreenshoot)
 
 saveFilename :: FilePath
@@ -38,13 +38,7 @@ main = do
   surface <- surfaceFromPointer (rawImagePtr rootImage) (rawImageWidth rootImage) (rawImageHeight rootImage)
   texture <- createTextureFromSurface renderer surface
   textureInfo <- queryTexture texture
-  let initialState =
-        emptyState
-          { stateTextureHeight = int (textureHeight textureInfo),
-            stateTextureWidth = int (textureWidth textureInfo),
-            stateZoomWidth = textureWidth textureInfo,
-            stateZoomHeight = textureHeight textureInfo
-          }
+  let initialState = newState (textureWidth textureInfo) (textureHeight textureInfo)
   draw renderer texture initialState
   present renderer
 
@@ -53,15 +47,15 @@ main = do
   let loop state = do
         events <- map SDL.eventPayload <$> SDL.pollEvents
         let shouldQuit = SDL.QuitEvent `elem` events
-            newState = updateEvents state events
+            updatedState = updateEvents state events
         clear renderer
-        draw renderer texture newState
+        draw renderer texture updatedState
         present renderer
         setfps
-        when (stateScreenshootIt newState) $ do
-          takeScreenshoot saveFilename surface newState
-        unless (shouldQuit || stateQuit state || stateScreenshootIt newState) $
-          loop newState
+        when (stateScreenshootIt updatedState) $ do
+          takeScreenshoot saveFilename surface updatedState
+        unless (shouldQuit || stateQuit updatedState || stateScreenshootIt updatedState) $
+          loop updatedState
 
   loop initialState
 
@@ -70,5 +64,4 @@ main = do
   destroyWindow window
   quit
   where
-    int i = fromIntegral i :: Int
     cint i = fromIntegral i :: CInt

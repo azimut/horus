@@ -1,6 +1,6 @@
 {-# LANGUAGE StrictData #-}
 
-module UI.State (emptyState, State (..)) where
+module UI.State (newState, State (..)) where
 
 import Foreign.C (CDouble, CInt)
 
@@ -20,8 +20,8 @@ data State = State
   }
   deriving (Show)
 
-emptyState :: State
-emptyState =
+newState :: (Integral a) => a -> a -> State
+newState width height =
   State
     { stateRotation = 0,
       stateQuit = False,
@@ -29,10 +29,13 @@ emptyState =
       stateHFlip = False,
       stateOffsetX = 0,
       stateOffsetY = 0,
-      stateTextureWidth = 0,
-      stateTextureHeight = 0,
+      stateTextureWidth = int width,
+      stateTextureHeight = int height,
       stateZoomBy = 1,
-      stateZoomHeight = 0,
-      stateZoomWidth = 0,
+      stateZoomHeight = cint height,
+      stateZoomWidth = cint width,
       stateScreenshootIt = False
     }
+  where
+    int i = fromIntegral i :: Int
+    cint i = fromIntegral i :: CInt
