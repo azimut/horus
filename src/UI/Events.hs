@@ -1,9 +1,9 @@
-module UI.Events (updateEvents, rotateIt, flipIt, isShifting) where
+module UI.Events (updateEvents) where
 
 import Data.Fixed (mod')
 import SDL
 import UI.Movement
-import UI.State (State (..))
+import UI.State (State (..), resetState)
 import UI.Zoom
 
 updateEvents :: State -> [EventPayload] -> State
@@ -16,7 +16,6 @@ updateEvent (SDL.KeyboardEvent event) state
         SDL.KeycodeQ -> state {stateQuit = True}
         SDL.KeycodeS -> state {stateScreenshootIt = True}
         SDL.KeycodeF -> flipIt state event
-        SDL.KeycodeR -> rotateIt state event
         SDL.KeycodePlus -> zoomIn state
         SDL.KeycodeMinus -> zoomOut state
         SDL.KeycodeLeft -> moveLeft state
@@ -27,6 +26,8 @@ updateEvent (SDL.KeyboardEvent event) state
         SDL.KeycodeL -> moveRight state
         SDL.KeycodeJ -> moveDown state
         SDL.KeycodeK -> moveUp state
+        SDL.KeycodeR -> resetState state
+        SDL.KeycodeLess -> if isShifting event then rotateRight state else rotateLeft state
         _otherKey -> state
 updateEvent (SDL.MouseWheelEvent event) state =
   case SDL.mouseWheelEventPos event of
@@ -40,11 +41,11 @@ isShifting event = SDL.keyModifierLeftShift keyModifier || SDL.keyModifierRightS
   where
     keyModifier = SDL.keysymModifier (SDL.keyboardEventKeysym event)
 
-rotateIt :: State -> KeyboardEventData -> State
-rotateIt state event =
-  if isShifting event
-    then state {stateRotation = mod' (stateRotation state - 45) 360}
-    else state {stateRotation = mod' (stateRotation state + 45) 360}
+rotateLeft :: State -> State
+rotateLeft state = state {stateRotation = mod' (stateRotation state - 45) 360}
+
+rotateRight :: State -> State
+rotateRight state = state {stateRotation = mod' (stateRotation state + 45) 360}
 
 flipIt :: State -> KeyboardEventData -> State
 flipIt state event =

@@ -25,7 +25,6 @@ surfaceFromPointer x width height = do
 takeScreenshoot :: FilePath -> Surface -> State -> IO ()
 takeScreenshoot filename texSurface state = do
   let (width, height) = (stateZoomWidth state, stateZoomHeight state)
-  putStrLn "Screenshooting...."
   withRGBSurface (V2 width height) ARGB8888 $ \surface ->
     withSRenderer surface $ \renderer -> do
       tmpTexture <- createTextureFromSurface renderer texSurface
@@ -35,7 +34,6 @@ takeScreenshoot filename texSurface state = do
       C.withImageSurfaceForData (F.castPtr pixels) C.FormatRGB24 (int width) (int height) (int (width * 4)) $ \iSurface -> do
         C.surfaceWriteToPNG iSurface filename
         void $ spawnProcess "/bin/xclip" ["-selection", "clipboard", "-t", "image/png", "-i", filename]
-  putStrLn "Done!"
   where
     r (SINT.Renderer rr) = rr
     int i = fromIntegral i :: Int
