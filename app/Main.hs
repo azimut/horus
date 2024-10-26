@@ -34,7 +34,7 @@ main = do
         }
   SDL.showWindow window
   renderer <- createRenderer window (-1) defaultRenderer
-zq  surface <- surfaceFromPointer (rawImagePtr rootImage) (rawImageWidth rootImage) (rawImageHeight rootImage)
+  surface <- surfaceFromPointer (rawImagePtr rootImage) (rawImageWidth rootImage) (rawImageHeight rootImage)
   texture <- createTextureFromSurface renderer surface
   textureInfo <- queryTexture texture
   let initialState = newState (textureWidth textureInfo) (textureHeight textureInfo)
