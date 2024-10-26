@@ -7,14 +7,13 @@ import Control.Concurrent (threadDelay)
 import Control.Monad (unless, when)
 import Foreign.C (CInt)
 import SDL
+import System.Directory (getHomeDirectory)
+import System.FilePath ((</>))
 import UI.Draw (draw)
 import UI.Events (updateEvents)
 import UI.Shoot (surfaceFromPointer, takeScreenshoot)
 import UI.State (State (..), newState)
 import Win (RawImage (..), loadScreenshoot)
-
-saveFilename :: FilePath
-saveFilename = "/home/sendai/shoot.png"
 
 setfps :: IO ()
 setfps = threadDelay 16_000 -- 60fps
@@ -35,7 +34,7 @@ main = do
         }
   SDL.showWindow window
   renderer <- createRenderer window (-1) defaultRenderer
-  surface <- surfaceFromPointer (rawImagePtr rootImage) (rawImageWidth rootImage) (rawImageHeight rootImage)
+zq  surface <- surfaceFromPointer (rawImagePtr rootImage) (rawImageWidth rootImage) (rawImageHeight rootImage)
   texture <- createTextureFromSurface renderer surface
   textureInfo <- queryTexture texture
   let initialState = newState (textureWidth textureInfo) (textureHeight textureInfo)
@@ -53,7 +52,8 @@ main = do
         present renderer
         setfps
         when (stateScreenshootIt updatedState) $ do
-          takeScreenshoot saveFilename surface updatedState
+          homeDir <- getHomeDirectory
+          takeScreenshoot (homeDir </> "horus.png") surface updatedState
         unless (shouldQuit || stateQuit updatedState || stateScreenshootIt updatedState) $
           loop updatedState
 

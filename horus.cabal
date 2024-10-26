@@ -30,6 +30,8 @@ executable horus
     main-is:          Main.hs
     build-depends:
         base ^>=4.17.2.1,
+        directory,
+        filepath,
         horus,
         sdl2,
         -- vector,
