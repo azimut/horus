@@ -4,6 +4,7 @@ module UI.Zoom (zoomOut, zoomIn) where
 
 import Foreign.C (CInt)
 import GHC.Float (float2Int, int2Float)
+import SDL (V2 (..))
 import UI.State (State (..))
 
 zoomStep :: Float
@@ -14,6 +15,7 @@ zoomIn state@State {..} =
   let newZoomBy = max zoomStep $ stateZoomBy - zoomStep
       newZoomHeight = float2CInt $ int2Float stateTextureHeight * newZoomBy
       newZoomWidth = float2CInt $ int2Float stateTextureWidth * newZoomBy
+      (V2 stateOffsetX stateOffsetY) = stateOffset
       newOffsetX =
         stateOffsetX
           + if stateZoomBy /= newZoomBy
@@ -28,8 +30,7 @@ zoomIn state@State {..} =
         { stateZoomBy = newZoomBy,
           stateZoomHeight = newZoomHeight,
           stateZoomWidth = newZoomWidth,
-          stateOffsetX = newOffsetX,
-          stateOffsetY = newOffsetY
+          stateOffset = V2 newOffsetX newOffsetY
         }
 
 zoomOut :: State -> State
@@ -37,6 +38,7 @@ zoomOut state@State {..} =
   let newZoomBy = min 1.0 $ stateZoomBy + zoomStep
       newZoomHeight = float2CInt $ int2Float stateTextureHeight * newZoomBy
       newZoomWidth = float2CInt $ int2Float stateTextureWidth * newZoomBy
+      (V2 stateOffsetX stateOffsetY) = stateOffset
       newOffsetX = stateOffsetX - float2CInt (int2Float stateTextureWidth * zoomStep * 0.5)
       newOffsetY = stateOffsetY - float2CInt (int2Float stateTextureHeight * zoomStep * 0.5)
       maxHeight = cint stateTextureHeight - newOffsetY
@@ -45,8 +47,7 @@ zoomOut state@State {..} =
         { stateZoomBy = newZoomBy,
           stateZoomHeight = min maxHeight newZoomHeight,
           stateZoomWidth = min maxWidth newZoomWidth,
-          stateOffsetX = max 0 newOffsetX,
-          stateOffsetY = max 0 newOffsetY
+          stateOffset = V2 (max 0 newOffsetX) (max 0 newOffsetY)
         }
 
 float2CInt :: Float -> CInt

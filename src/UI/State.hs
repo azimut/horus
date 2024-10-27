@@ -3,6 +3,7 @@
 module UI.State (newState, resetState, State (..)) where
 
 import Foreign.C (CDouble, CInt)
+import SDL (V2 (..))
 
 data State = State
   { stateRotation :: CDouble,
@@ -13,9 +14,9 @@ data State = State
     stateTextureHeight :: Int,
     stateZoomWidth :: CInt,
     stateZoomHeight :: CInt,
-    stateOffsetX :: CInt,
-    stateOffsetY :: CInt,
     stateZoomBy :: Float,
+    stateOffset :: V2 CInt,
+    stateVel :: V2 CInt,
     stateScreenshootIt :: Bool
   }
   deriving (Show)
@@ -27,13 +28,13 @@ newState width height =
       stateQuit = False,
       stateVFlip = False,
       stateHFlip = False,
-      stateOffsetX = 0,
-      stateOffsetY = 0,
+      stateOffset = V2 0 0,
       stateTextureWidth = fromIntegral width,
       stateTextureHeight = fromIntegral height,
       stateZoomBy = 1,
       stateZoomHeight = fromIntegral height,
       stateZoomWidth = fromIntegral width,
+      stateVel = V2 0 0,
       stateScreenshootIt = False
     }
 
@@ -44,6 +45,6 @@ resetState state =
       stateZoomWidth = fromIntegral (stateTextureWidth state),
       stateZoomHeight = fromIntegral (stateTextureHeight state),
       stateRotation = 0,
-      stateOffsetX = 0,
-      stateOffsetY = 0
+      stateOffset = V2 0 0,
+      stateVel = V2 0 0
     }

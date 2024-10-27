@@ -12,7 +12,7 @@ draw renderer texture State {..} =
     texture
     ( Just
         ( Rectangle
-            (P (V2 stateOffsetX stateOffsetY))
+            (P stateOffset)
             (V2 stateZoomWidth stateZoomHeight)
         )
     )

@@ -11,6 +11,7 @@ import System.Directory (getHomeDirectory)
 import System.FilePath ((</>))
 import UI.Draw (draw)
 import UI.Events (updateEvents)
+import UI.Movement (move)
 import UI.Shoot (surfaceFromPointer, takeScreenshoot)
 import UI.State (State (..), newState)
 import Win (RawImage (..), loadScreenshoot)
@@ -46,7 +47,7 @@ main = do
   let loop state = do
         events <- map SDL.eventPayload <$> SDL.pollEvents
         let shouldQuit = SDL.QuitEvent `elem` events
-            updatedState = updateEvents state events
+            updatedState = move $ updateEvents state events
         clear renderer
         draw renderer texture updatedState
         present renderer
