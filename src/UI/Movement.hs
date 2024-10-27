@@ -1,9 +1,10 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module UI.Movement (pushUp, pushRight, pushDown, pushLeft, move) where
+module UI.Movement (updateMovement) where
 
 import Foreign.C (CInt)
-import SDL (Additive (..), V2 (..))
+import SDL (Scancode, V2 (..))
+import qualified SDL
 import UI.State (State (..))
 
 deceleration :: CInt
@@ -12,20 +13,40 @@ deceleration = 1
 pushStep :: CInt
 pushStep = 3
 
-pushLeft :: State -> State
-pushLeft state = state {stateVel = stateVel state ^-^ V2 pushStep 0}
+updateMovement :: (Scancode -> Bool) -> State -> State
+updateMovement keysState state =
+  applyForce $
+    state
+      { stateVel =
+          stateVel state
+            + pushUp keysState
+            + pushDown keysState
+            + pushLeft keysState
+            + pushRight keysState
+      }
 
-pushRight :: State -> State
-pushRight state = state {stateVel = stateVel state ^+^ V2 pushStep 0}
+pushUp :: (Scancode -> Bool) -> V2 CInt
+pushUp keysState
+  | keysState SDL.ScancodeUp || keysState SDL.ScancodeK = V2 0 (-pushStep)
+  | otherwise = V2 0 0
 
-pushUp :: State -> State
-pushUp state = state {stateVel = stateVel state ^-^ V2 0 pushStep}
+pushDown :: (Scancode -> Bool) -> V2 CInt
+pushDown keysState
+  | keysState SDL.ScancodeDown || keysState SDL.ScancodeJ = V2 0 pushStep
+  | otherwise = V2 0 0
 
-pushDown :: State -> State
-pushDown state = state {stateVel = stateVel state ^+^ V2 0 pushStep}
+pushRight :: (Scancode -> Bool) -> V2 CInt
+pushRight keysState
+  | keysState SDL.ScancodeRight || keysState SDL.ScancodeL = V2 pushStep 0
+  | otherwise = V2 0 0
 
-move :: State -> State
-move state@State {..} =
+pushLeft :: (Scancode -> Bool) -> V2 CInt
+pushLeft keysState
+  | keysState SDL.ScancodeLeft || keysState SDL.ScancodeH = V2 (-pushStep) 0
+  | otherwise = V2 0 0
+
+applyForce :: State -> State
+applyForce state@State {..} =
   let (V2 offX offY) = stateOffset
       (V2 velX velY) = stateVel
       maxX = fromIntegral stateTextureWidth - stateZoomWidth

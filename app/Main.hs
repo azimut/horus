@@ -11,13 +11,13 @@ import System.Directory (getHomeDirectory)
 import System.FilePath ((</>))
 import UI.Draw (draw)
 import UI.Events (updateEvents)
-import UI.Movement (move)
+import UI.Movement (updateMovement)
 import UI.Shoot (surfaceFromPointer, takeScreenshoot)
 import UI.State (State (..), newState)
 import Win (RawImage (..), loadScreenshoot)
 
 setfps :: IO ()
-setfps = threadDelay 16_000 -- 60fps
+setfps = threadDelay 32_000 -- 60fps 16k
 
 main :: IO ()
 main = do
@@ -44,21 +44,7 @@ main = do
 
   SDL.rendererDrawColor renderer $= V4 0 0 0 0
 
-  let loop state = do
-        events <- map SDL.eventPayload <$> SDL.pollEvents
-        let shouldQuit = SDL.QuitEvent `elem` events
-            updatedState = move $ updateEvents state events
-        clear renderer
-        draw renderer texture updatedState
-        present renderer
-        setfps
-        when (stateScreenshootIt updatedState) $ do
-          homeDir <- getHomeDirectory
-          takeScreenshoot (homeDir </> "horus.png") surface updatedState
-        unless (shouldQuit || stateQuit updatedState || stateScreenshootIt updatedState) $
-          loop updatedState
-
-  loop initialState
+  loop initialState renderer surface texture
 
   freeSurface surface
   destroyRenderer renderer
@@ -66,3 +52,19 @@ main = do
   quit
   where
     cint i = fromIntegral i :: CInt
+
+loop :: State -> Renderer -> Surface -> Texture -> IO ()
+loop state renderer surface texture = do
+  events <- map SDL.eventPayload <$> SDL.pollEvents
+  keysState <- getKeyboardState
+  let shouldQuit = SDL.QuitEvent `elem` events
+      updatedState = updateMovement keysState $ updateEvents state events
+  clear renderer
+  draw renderer texture updatedState
+  present renderer
+  setfps
+  when (stateScreenshootIt updatedState) $ do
+    homeDir <- getHomeDirectory
+    takeScreenshoot (homeDir </> "horus.png") surface updatedState
+  unless (shouldQuit || stateQuit updatedState || stateScreenshootIt updatedState) $
+    loop updatedState renderer surface texture

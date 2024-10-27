@@ -2,7 +2,6 @@ module UI.Events (updateEvents) where
 
 import Data.Fixed (mod')
 import SDL
-import UI.Movement (pushDown, pushLeft, pushRight, pushUp)
 import UI.State (State (..), resetState)
 import UI.Zoom (zoomIn, zoomOut)
 
@@ -18,14 +17,6 @@ updateEvent (SDL.KeyboardEvent event) state
         SDL.KeycodeF -> flipIt state event
         SDL.KeycodePlus -> zoomIn state
         SDL.KeycodeMinus -> zoomOut state
-        SDL.KeycodeLeft -> pushLeft state
-        SDL.KeycodeRight -> pushRight state
-        SDL.KeycodeDown -> pushDown state
-        SDL.KeycodeUp -> pushUp state
-        SDL.KeycodeH -> pushLeft state
-        SDL.KeycodeL -> pushRight state
-        SDL.KeycodeJ -> pushDown state
-        SDL.KeycodeK -> pushUp state
         SDL.KeycodeR -> resetState state
         SDL.KeycodeLess -> if isShifting event then rotateRight state else rotateLeft state
         _otherKey -> state
