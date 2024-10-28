@@ -2,16 +2,16 @@
 
 module UI.Movement (updateMovement) where
 
-import Foreign.C (CInt)
+import GHC.Float (float2Int)
 import SDL (Scancode, V2 (..))
 import qualified SDL
 import UI.State (State (..))
 
-deceleration :: CInt
+deceleration :: Float
 deceleration = 1
 
-pushStep :: CInt
-pushStep = 3
+pushBy :: Float
+pushBy = 2.5
 
 updateMovement :: (Scancode -> Bool) -> State -> State
 updateMovement keysState state =
@@ -25,24 +25,24 @@ updateMovement keysState state =
             + pushRight keysState
       }
 
-pushUp :: (Scancode -> Bool) -> V2 CInt
+pushUp :: (Scancode -> Bool) -> V2 Float
 pushUp keysState
-  | keysState SDL.ScancodeUp || keysState SDL.ScancodeK = V2 0 (-pushStep)
+  | keysState SDL.ScancodeUp || keysState SDL.ScancodeK = V2 0 (-pushBy)
   | otherwise = V2 0 0
 
-pushDown :: (Scancode -> Bool) -> V2 CInt
+pushDown :: (Scancode -> Bool) -> V2 Float
 pushDown keysState
-  | keysState SDL.ScancodeDown || keysState SDL.ScancodeJ = V2 0 pushStep
+  | keysState SDL.ScancodeDown || keysState SDL.ScancodeJ = V2 0 pushBy
   | otherwise = V2 0 0
 
-pushRight :: (Scancode -> Bool) -> V2 CInt
+pushRight :: (Scancode -> Bool) -> V2 Float
 pushRight keysState
-  | keysState SDL.ScancodeRight || keysState SDL.ScancodeL = V2 pushStep 0
+  | keysState SDL.ScancodeRight || keysState SDL.ScancodeL = V2 pushBy 0
   | otherwise = V2 0 0
 
-pushLeft :: (Scancode -> Bool) -> V2 CInt
+pushLeft :: (Scancode -> Bool) -> V2 Float
 pushLeft keysState
-  | keysState SDL.ScancodeLeft || keysState SDL.ScancodeH = V2 (-pushStep) 0
+  | keysState SDL.ScancodeLeft || keysState SDL.ScancodeH = V2 (-pushBy) 0
   | otherwise = V2 0 0
 
 applyForce :: State -> State
@@ -51,8 +51,8 @@ applyForce state@State {..} =
       (V2 velX velY) = stateVel
       maxX = fromIntegral stateTextureWidth - stateZoomWidth
       maxY = fromIntegral stateTextureHeight - stateZoomHeight
-      newX = max 0 $ min maxX $ offX + velX
-      newY = max 0 $ min maxY $ offY + velY
+      newX = max 0 $ min maxX $ offX + fromIntegral (float2Int velX)
+      newY = max 0 $ min maxY $ offY + fromIntegral (float2Int velY)
    in state
         { stateOrigin = V2 newX newY,
           stateVel =
@@ -63,11 +63,11 @@ applyForce state@State {..} =
               )
         }
 
-decelerate :: V2 CInt -> V2 CInt
+decelerate :: V2 Float -> V2 Float
 decelerate v@(V2 0 0) = v
 decelerate (V2 x y) = V2 (toZero x) (toZero y)
 
-toZero :: CInt -> CInt
+toZero :: Float -> Float
 toZero n =
   case compare n 0 of
     LT -> n + deceleration
