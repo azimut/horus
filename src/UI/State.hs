@@ -18,6 +18,7 @@ data State = State
     stateOrigin :: V2 CInt,
     stateScreenshootIt :: Bool
     stateVel :: V2 Float,
+    stateScreenshootIt :: Bool,
   }
   deriving (Show)
 
