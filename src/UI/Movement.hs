@@ -55,7 +55,12 @@ applyForce state@State {..} =
       newY = max 0 $ min maxY $ offY + velY
    in state
         { stateOrigin = V2 newX newY,
-          stateVel = decelerate stateVel
+          stateVel =
+            decelerate
+              ( V2
+                  (if newX == maxX || newX == 0 then 0 else velX)
+                  (if newY == maxY || newY == 0 then 0 else velY)
+              )
         }
 
 decelerate :: V2 CInt -> V2 CInt
