@@ -3,7 +3,7 @@
 module UI.Movement (updateMovement) where
 
 import GHC.Float (float2Int)
-import SDL (Scancode, V2 (..))
+import SDL (Scancode, V2 (..), (^*))
 import qualified SDL
 import UI.State (State (..))
 
@@ -14,20 +14,18 @@ pushBy :: Float
 pushBy = 5
 
 updateMovement :: (Scancode -> Bool) -> State -> State
-updateMovement keysState state =
-  let power = max 0.25 $ stateZoomBy state
-   in applyForce $
-        state
-          { stateVel =
-              stateVel state
-                + ( ( pushUp keysState
-                        + pushDown keysState
-                        + pushLeft keysState
-                        + pushRight keysState
-                    )
-                      * V2 power power
-                  )
-          }
+updateMovement keysState = applyForce . addForce keysState
+
+addForce :: (Scancode -> Bool) -> State -> State
+addForce keysState state@State {..} =
+  let attenuation = max 0.25 stateZoomBy
+   in state
+        { stateVel =
+            stateVel + pushIt keysState ^* attenuation
+        }
+
+pushIt :: (Scancode -> Bool) -> V2 Float
+pushIt f = pushUp f + pushDown f + pushLeft f + pushRight f
 
 pushUp :: (Scancode -> Bool) -> V2 Float
 pushUp keysState
@@ -62,14 +60,14 @@ applyForce state@State {..} =
           stateVel =
             decelerate
               ( V2
+                  -- NOTE: when touching the walls, zero out velocity
                   (if newX == maxX || newX == 0 then 0 else velX)
                   (if newY == maxY || newY == 0 then 0 else velY)
               )
         }
 
 decelerate :: V2 Float -> V2 Float
-decelerate v@(V2 0 0) = v
-decelerate (V2 x y) = V2 (toZero x) (toZero y)
+decelerate = fmap toZero
 
 toZero :: Float -> Float
 toZero n =
