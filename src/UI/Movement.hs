@@ -11,19 +11,23 @@ deceleration :: Float
 deceleration = 1
 
 pushBy :: Float
-pushBy = 2.5
+pushBy = 5
 
 updateMovement :: (Scancode -> Bool) -> State -> State
 updateMovement keysState state =
-  applyForce $
-    state
-      { stateVel =
-          stateVel state
-            + pushUp keysState
-            + pushDown keysState
-            + pushLeft keysState
-            + pushRight keysState
-      }
+  let power = max 0.25 $ stateZoomBy state
+   in applyForce $
+        state
+          { stateVel =
+              stateVel state
+                + ( ( pushUp keysState
+                        + pushDown keysState
+                        + pushLeft keysState
+                        + pushRight keysState
+                    )
+                      * V2 power power
+                  )
+          }
 
 pushUp :: (Scancode -> Bool) -> V2 Float
 pushUp keysState
