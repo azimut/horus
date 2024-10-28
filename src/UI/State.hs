@@ -16,9 +16,8 @@ data State = State
     stateZoomHeight :: CInt,
     stateZoomBy :: Float,
     stateOrigin :: V2 CInt,
-    stateScreenshootIt :: Bool
     stateVel :: V2 Float,
-    stateScreenshootIt :: Bool,
+    stateScreenshootIt :: Bool
   }
   deriving (Show)
 
