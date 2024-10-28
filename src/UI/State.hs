@@ -15,7 +15,7 @@ data State = State
     stateZoomWidth :: CInt,
     stateZoomHeight :: CInt,
     stateZoomBy :: Float,
-    stateOffset :: V2 CInt,
+    stateOrigin :: V2 CInt,
     stateVel :: V2 CInt,
     stateScreenshootIt :: Bool
   }
@@ -28,7 +28,7 @@ newState width height =
       stateQuit = False,
       stateVFlip = False,
       stateHFlip = False,
-      stateOffset = V2 0 0,
+      stateOrigin = V2 0 0,
       stateTextureWidth = fromIntegral width,
       stateTextureHeight = fromIntegral height,
       stateZoomBy = 1,
@@ -45,6 +45,6 @@ resetState state =
       stateZoomWidth = fromIntegral (stateTextureWidth state),
       stateZoomHeight = fromIntegral (stateTextureHeight state),
       stateRotation = 0,
-      stateOffset = V2 0 0,
+      stateOrigin = V2 0 0,
       stateVel = V2 0 0
     }

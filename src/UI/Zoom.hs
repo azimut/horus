@@ -12,46 +12,45 @@ zoomStep = 0.1
 
 zoomIn :: State -> State
 zoomIn state@State {..} =
-  let newZoomBy = max zoomStep $ stateZoomBy - zoomStep
-      newZoomHeight = float2CInt $ int2Float stateTextureHeight * newZoomBy
-      newZoomWidth = float2CInt $ int2Float stateTextureWidth * newZoomBy
-      (V2 stateOffsetX stateOffsetY) = stateOffset
+  let (V2 stateOriginX stateOriginY) = stateOrigin
+      newZoomBy = max zoomStep $ stateZoomBy - zoomStep
       newOffsetX =
-        stateOffsetX
+        stateOriginX
           + if stateZoomBy /= newZoomBy
-            then float2CInt (int2Float stateTextureWidth * zoomStep * 0.5)
+            then multBy stateTextureWidth (zoomStep * 0.5)
             else 0
       newOffsetY =
-        stateOffsetY
+        stateOriginY
           + if stateZoomBy /= newZoomBy
-            then float2CInt (int2Float stateTextureHeight * zoomStep * 0.5)
+            then multBy stateTextureHeight (zoomStep * 0.5)
             else 0
    in state
         { stateZoomBy = newZoomBy,
-          stateZoomHeight = newZoomHeight,
-          stateZoomWidth = newZoomWidth,
-          stateOffset = V2 newOffsetX newOffsetY
+          stateZoomHeight = multBy stateTextureHeight newZoomBy,
+          stateZoomWidth = multBy stateTextureWidth newZoomBy,
+          stateOrigin = V2 newOffsetX newOffsetY
         }
 
 zoomOut :: State -> State
 zoomOut state@State {..} =
-  let newZoomBy = min 1.0 $ stateZoomBy + zoomStep
-      newZoomHeight = float2CInt $ int2Float stateTextureHeight * newZoomBy
-      newZoomWidth = float2CInt $ int2Float stateTextureWidth * newZoomBy
-      (V2 stateOffsetX stateOffsetY) = stateOffset
-      newOffsetX = stateOffsetX - float2CInt (int2Float stateTextureWidth * zoomStep * 0.5)
-      newOffsetY = stateOffsetY - float2CInt (int2Float stateTextureHeight * zoomStep * 0.5)
-      maxHeight = cint stateTextureHeight - newOffsetY
-      maxWidth = cint stateTextureWidth - newOffsetX
+  let zoomBy = min 1.0 $ stateZoomBy + zoomStep
+      width = multBy stateTextureWidth zoomBy
+      height = multBy stateTextureHeight zoomBy
+      deltaOriginX = multBy stateTextureWidth (zoomStep * 0.5) -- constant+
+      deltaOriginY = multBy stateTextureHeight (zoomStep * 0.5) -- constant+
+      (V2 x y) = stateOrigin
+      originX = x - deltaOriginX
+      originY = y - deltaOriginY
+      zoomWidth = width + (if originX < 0 then (-originX) else 0)
+      zoomHeight = height + (if originY < 0 then (-originY) else 0)
+      maxZoomWidth = fromIntegral stateTextureWidth - max 0 originX
+      maxZoomHeight = fromIntegral stateTextureHeight - max 0 originY
    in state
-        { stateZoomBy = newZoomBy,
-          stateZoomHeight = min maxHeight newZoomHeight,
-          stateZoomWidth = min maxWidth newZoomWidth,
-          stateOffset = V2 (max 0 newOffsetX) (max 0 newOffsetY)
+        { stateZoomBy = zoomBy,
+          stateZoomWidth = min zoomWidth maxZoomWidth,
+          stateZoomHeight = min zoomHeight maxZoomHeight,
+          stateOrigin = V2 (max 0 originX) (max 0 originY)
         }
 
-float2CInt :: Float -> CInt
-float2CInt n = fromIntegral (float2Int n) :: CInt
-
-cint :: (Integral a) => a -> CInt
-cint i = fromIntegral i :: CInt
+multBy :: Int -> Float -> CInt
+multBy n by = fromIntegral . float2Int $ int2Float n * by

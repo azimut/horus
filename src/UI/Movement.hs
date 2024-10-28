@@ -47,14 +47,14 @@ pushLeft keysState
 
 applyForce :: State -> State
 applyForce state@State {..} =
-  let (V2 offX offY) = stateOffset
+  let (V2 offX offY) = stateOrigin
       (V2 velX velY) = stateVel
       maxX = fromIntegral stateTextureWidth - stateZoomWidth
       maxY = fromIntegral stateTextureHeight - stateZoomHeight
       newX = max 0 $ min maxX $ offX + velX
       newY = max 0 $ min maxY $ offY + velY
    in state
-        { stateOffset = V2 newX newY,
+        { stateOrigin = V2 newX newY,
           stateVel = decelerate stateVel
         }
 
