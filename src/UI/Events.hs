@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module UI.Events (updateEvents) where
 
 import Data.Fixed (mod')
@@ -18,7 +20,7 @@ updateEvent (SDL.KeyboardEvent event) state
         SDL.KeycodePlus -> zoomIn state
         SDL.KeycodeMinus -> zoomOut state
         SDL.KeycodeR -> resetState state
-        SDL.KeycodeLess -> if isShifting event then rotateRight state else rotateLeft state
+        SDL.KeycodeLess -> rotateIt state event
         _otherKey -> state
 updateEvent (SDL.MouseWheelEvent event) state =
   case SDL.mouseWheelEventPos event of
@@ -32,22 +34,14 @@ isShifting event = SDL.keyModifierLeftShift keyModifier || SDL.keyModifierRightS
   where
     keyModifier = SDL.keysymModifier (SDL.keyboardEventKeysym event)
 
-rotateLeft :: State -> State
-rotateLeft state =
-  state
-    { stateRotation = mod' (stateRotation state - 45) 360,
-      stateVel = V2 0 0
-    }
-
-rotateRight :: State -> State
-rotateRight state =
-  state
-    { stateRotation = mod' (stateRotation state + 45) 360,
-      stateVel = V2 0 0
-    }
+rotateIt :: State -> KeyboardEventData -> State
+rotateIt state@State {..} event =
+  if isShifting event
+    then state {stateRotation = mod' (stateRotation + 45) 360, stateVel = V2 0 0}
+    else state {stateRotation = mod' (stateRotation - 45) 360, stateVel = V2 0 0}
 
 flipIt :: State -> KeyboardEventData -> State
-flipIt state event =
+flipIt state@State {..} event =
   if isShifting event
-    then state {stateVFlip = not (stateVFlip state)}
-    else state {stateHFlip = not (stateHFlip state)}
+    then state {stateVFlip = not stateVFlip, stateVel = V2 0 0}
+    else state {stateHFlip = not stateHFlip, stateVel = V2 0 0}

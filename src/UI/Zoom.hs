@@ -17,12 +17,12 @@ zoomIn state@State {..} =
       newOffsetX =
         stateOriginX
           + if stateZoomBy /= newZoomBy
-            then multBy stateTextureWidth (zoomStep * 0.5)
+            then multBy stateTextureWidth (zoomStep / 2)
             else 0
       newOffsetY =
         stateOriginY
           + if stateZoomBy /= newZoomBy
-            then multBy stateTextureHeight (zoomStep * 0.5)
+            then multBy stateTextureHeight (zoomStep / 2)
             else 0
    in state
         { stateZoomBy = newZoomBy,
@@ -33,11 +33,11 @@ zoomIn state@State {..} =
 
 zoomOut :: State -> State
 zoomOut state@State {..} =
-  let zoomBy = min 1.0 $ stateZoomBy + zoomStep
+  let zoomBy = min 1 $ stateZoomBy + zoomStep
       width = multBy stateTextureWidth zoomBy
       height = multBy stateTextureHeight zoomBy
-      deltaOriginX = multBy stateTextureWidth (zoomStep * 0.5) -- constant+
-      deltaOriginY = multBy stateTextureHeight (zoomStep * 0.5) -- constant+
+      deltaOriginX = multBy stateTextureWidth (zoomStep / 2) -- constant+
+      deltaOriginY = multBy stateTextureHeight (zoomStep / 2) -- constant+
       (V2 x y) = stateOrigin
       originX = x - deltaOriginX
       originY = y - deltaOriginY
