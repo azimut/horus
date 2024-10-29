@@ -2,59 +2,30 @@
 
 module UI.Movement (updateMovement) where
 
-import GHC.Float (float2Int)
+import Foreign.C.Types (CDouble (..))
+import GHC.Float (double2Int, float2Double)
 import SDL (Scancode, V2 (..), (^*))
 import qualified SDL
 import UI.State (State (..))
 
-deceleration :: Float
+deceleration :: Double
 deceleration = 1
 
-pushBy :: Float
+pushBy :: Double
 pushBy = 5
 
 updateMovement :: (Scancode -> Bool) -> State -> State
 updateMovement keysState = applyForce . addForce keysState
 
-addForce :: (Scancode -> Bool) -> State -> State
-addForce keysState state@State {..} =
-  let attenuation = max 0.25 stateZoomBy
-   in state
-        { stateVel =
-            stateVel + pushIt keysState ^* attenuation
-        }
-
-pushIt :: (Scancode -> Bool) -> V2 Float
-pushIt f = pushUp f + pushDown f + pushLeft f + pushRight f
-
-pushUp :: (Scancode -> Bool) -> V2 Float
-pushUp keysState
-  | keysState SDL.ScancodeUp || keysState SDL.ScancodeK = V2 0 (-pushBy)
-  | otherwise = V2 0 0
-
-pushDown :: (Scancode -> Bool) -> V2 Float
-pushDown keysState
-  | keysState SDL.ScancodeDown || keysState SDL.ScancodeJ = V2 0 pushBy
-  | otherwise = V2 0 0
-
-pushRight :: (Scancode -> Bool) -> V2 Float
-pushRight keysState
-  | keysState SDL.ScancodeRight || keysState SDL.ScancodeL = V2 pushBy 0
-  | otherwise = V2 0 0
-
-pushLeft :: (Scancode -> Bool) -> V2 Float
-pushLeft keysState
-  | keysState SDL.ScancodeLeft || keysState SDL.ScancodeH = V2 (-pushBy) 0
-  | otherwise = V2 0 0
-
 applyForce :: State -> State
 applyForce state@State {..} =
-  let (V2 offX offY) = stateOrigin
-      (V2 velX velY) = stateVel
-      maxX = fromIntegral stateTextureWidth - stateZoomWidth
+  let maxX = fromIntegral stateTextureWidth - stateZoomWidth
       maxY = fromIntegral stateTextureHeight - stateZoomHeight
-      newX = max 0 $ min maxX $ offX + fromIntegral (float2Int velX)
-      newY = max 0 $ min maxY $ offY + fromIntegral (float2Int velY)
+      (V2 offX offY) = stateOrigin
+      (V2 velX velY) = stateVel
+      radians = toRadians stateRotation
+      newX = max 0 $ min maxX $ offX + fromIntegral (double2Int (realToFrac (CDouble velX * cos radians - CDouble velY * sin radians)))
+      newY = max 0 $ min maxY $ offY + fromIntegral (double2Int (realToFrac (CDouble velX * sin radians + CDouble velY * cos radians)))
    in state
         { stateOrigin = V2 newX newY,
           stateVel =
@@ -66,12 +37,46 @@ applyForce state@State {..} =
               )
         }
 
-decelerate :: V2 Float -> V2 Float
+addForce :: (Scancode -> Bool) -> State -> State
+addForce keysState state@State {..} =
+  let attenuation = max 0.25 (float2Double stateZoomBy)
+   in state
+        { stateVel =
+            stateVel + pushIt keysState ^* attenuation
+        }
+
+pushIt :: (Scancode -> Bool) -> V2 Double
+pushIt f = pushUp f + pushDown f + pushLeft f + pushRight f
+
+pushUp :: (Scancode -> Bool) -> V2 Double
+pushUp keysState
+  | keysState SDL.ScancodeUp || keysState SDL.ScancodeK = V2 0 (-pushBy)
+  | otherwise = V2 0 0
+
+pushDown :: (Scancode -> Bool) -> V2 Double
+pushDown keysState
+  | keysState SDL.ScancodeDown || keysState SDL.ScancodeJ = V2 0 pushBy
+  | otherwise = V2 0 0
+
+pushRight :: (Scancode -> Bool) -> V2 Double
+pushRight keysState
+  | keysState SDL.ScancodeRight || keysState SDL.ScancodeL = V2 pushBy 0
+  | otherwise = V2 0 0
+
+pushLeft :: (Scancode -> Bool) -> V2 Double
+pushLeft keysState
+  | keysState SDL.ScancodeLeft || keysState SDL.ScancodeH = V2 (-pushBy) 0
+  | otherwise = V2 0 0
+
+decelerate :: V2 Double -> V2 Double
 decelerate = fmap toZero
 
-toZero :: Float -> Float
+toZero :: Double -> Double
 toZero n =
   case compare n 0 of
     LT -> n + deceleration
     GT -> n - deceleration
     EQ -> 0
+
+toRadians :: (Floating a) => a -> a
+toRadians n = n * (pi / 180)

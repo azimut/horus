@@ -41,16 +41,24 @@ zoomOut state@State {..} =
       (V2 x y) = stateOrigin
       originX = x - deltaOriginX
       originY = y - deltaOriginY
-      zoomWidth = width + (if originX < 0 then (-originX) else 0)
-      zoomHeight = height + (if originY < 0 then (-originY) else 0)
+      fixX = if originX > 0 && originX + width > fromIntegral stateTextureWidth then (originX + width) - fromIntegral stateTextureWidth else 0
+      fixY = if originY > 0 && originY + height > fromIntegral stateTextureHeight then (originY + height) - fromIntegral stateTextureHeight else 0
+      realOriginX = originX - (fixX + other stateTextureWidth stateTextureHeight fixX)
+      realOriginY = originY - (fixY + other stateTextureHeight stateTextureWidth fixY)
+      zWFix = if originX < 0 then (-originX) else 0
+      zHFix = if originY < 0 then (-originY) else 0
+      zoomWidth = width + zWFix + other stateTextureHeight stateTextureWidth zHFix
+      zoomHeight = height + zHFix + other stateTextureWidth stateTextureHeight zWFix
       maxZoomWidth = fromIntegral stateTextureWidth - max 0 originX
       maxZoomHeight = fromIntegral stateTextureHeight - max 0 originY
    in state
         { stateZoomBy = zoomBy,
           stateZoomWidth = min zoomWidth maxZoomWidth,
           stateZoomHeight = min zoomHeight maxZoomHeight,
-          stateOrigin = V2 (max 0 originX) (max 0 originY)
+          stateOrigin = V2 (max 0 realOriginX) (max 0 realOriginY)
         }
+  where
+    other w h v = fromIntegral $ float2Int $ (int2Float (fromIntegral v) / int2Float w) * int2Float h
 
 multBy :: Int -> Float -> CInt
 multBy n by = fromIntegral . float2Int $ int2Float n * by
