@@ -18,9 +18,15 @@ jobs:
           sudo apt update -y
           sudo apt install -y libsdl2-dev libsdl2-image-dev libcairo2-dev libx11-dev libxext-dev libxinerama-dev libxrandr-dev libxss-dev
       - uses: haskell-actions/setup@v2
+        id: setup
         with:
           ghc-version: '9.4.8'
           cabal-version: '3.10.3.0'
+
+      - use: actions/cache@v4
+        with:
+          path: ${{ steps.setup.outputs.cabal-store }}
+          key: ${{ runner.os }}-ghc-${{ steps.setup.outputs.ghc-version }}-${{ hashFiles('cabal.project.freeze') }}
 
       - run: cabal build
 
