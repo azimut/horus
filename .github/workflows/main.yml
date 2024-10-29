@@ -21,4 +21,17 @@ jobs:
         with:
           ghc-version: '9.4.8'
           cabal-version: '3.10.3.0'
+
       - run: cabal build
+
+      - name: copy output binary
+        run: cp -v dist-newstyle/build/x86_64-linux/ghc-9.4.8/horus-0.1.0.0/x/horus/build/horus/horus .
+      - uses: marvinpinto/action-automatic-releases@latest
+        with:
+          automatic_release_tag: 'latest'
+          prerelease: true
+          title: 'Development Build'
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          files: |
+            horus
+            LICENSE

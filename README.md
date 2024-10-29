@@ -2,7 +2,29 @@
 
 👷**WORK IN PROGRESS**👷
 
-Small zoom and screenshot tool. Based on SDL and X11. Keyboard-centric.
+Minimal zoom and screenshot tool. Based on SDL and X11. Keyboard-centric.
+
+## Usage
+
+Install 3rd party dependency libraries. And run it with no arguments. It will take a screenshot of the whole screen and present it in fullscreen.
+
+``` shell
+$ sudo apt install -y libsdl2 libsdl2-image libcairo2 libx11 libxext libxinerama libxrandr libxss
+$ horus
+```
+
+## Installation
+
+### Prebuild Binary
+
+See releases
+
+### From Source
+
+``` console
+$ sudo apt install -y libsdl2-dev libsdl2-image-dev libcairo2-dev libx11-dev libxext-dev libxinerama-dev libxrandr-dev libxss-dev
+$ cabal build
+```
 
 ## Controls
 
@@ -21,16 +43,8 @@ Small zoom and screenshot tool. Based on SDL and X11. Keyboard-centric.
 | >   | rotate right            |
 | s   | screenshoot + clipboard |
 
-## Installation
-
-### From Source
-
-``` console
-$ sudo apt install -y libsdl2-dev libsdl2-image-dev libcairo2-dev libx11-dev libxext-dev libxinerama-dev libxrandr-dev libxss-dev
-$ cabal build
-```
-
 ## Development References
+
 - [C code example using x11+cairo](https://chromium.googlesource.com/chromiumos/platform/window_manager/+/a2bc12e3761d2c1d41b69c2a334af60262e7bd4c/screenshot.cc)
 - [Haskell code to screenshoot a ppm](https://github.com/xmonad/X11/blob/master/examples/ScreenCapture.hs)
 - [Haskell code sdl2+cairo](https://github.com/haskell-gi/haskell-gi/blob/master/cairo/examples/sdl/CairoSDL.hs)
