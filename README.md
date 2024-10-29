@@ -2,7 +2,33 @@
 
 👷**WORK IN PROGRESS**👷
 
-Keyboard-centric GUI tool to do basic image edits from images or from a screenshoot.
+Small zoom and screenshot tool. Based on SDL and X11. Keyboard-centric.
+
+## Controls
+
+| key | mapping                 |
+|-----|-------------------------|
+| h   | left                    |
+| j   | down                    |
+| k   | up                      |
+| l   | right                   |
+| r   | reset                   |
+| f   | flip horizontally       |
+| F   | flip vertically         |
+| +   | zoom in                 |
+| -   | zoom out                |
+| <   | rotate left             |
+| >   | rotate right            |
+| s   | screenshoot + clipboard |
+
+## Installation
+
+### From Source
+
+``` console
+$ sudo apt install -y libsdl2-dev libsdl2-image-dev libcairo2-dev libx11-dev libxext-dev libxinerama-dev libxrandr-dev libxss-dev
+$ cabal build
+```
 
 ## Development References
 - [C code example using x11+cairo](https://chromium.googlesource.com/chromiumos/platform/window_manager/+/a2bc12e3761d2c1d41b69c2a334af60262e7bd4c/screenshot.cc)
