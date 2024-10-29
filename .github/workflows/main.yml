@@ -27,6 +27,7 @@ jobs:
       - name: copy output binary
         run: cp -v dist-newstyle/build/x86_64-linux/ghc-9.4.8/horus-0.1.0.0/x/horus/build/horus/horus .
       - uses: marvinpinto/action-automatic-releases@latest
+        if: github.ref == 'refs/heads/master' # only release on master
         with:
           automatic_release_tag: 'latest'
           prerelease: true

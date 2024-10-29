@@ -17,7 +17,7 @@ $ horus
 
 ### Prebuild Binary
 
-See releases
+See [releases](https://github.com/azimut/horus/releases).
 
 ### From Source
 
