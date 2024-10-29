@@ -33,10 +33,18 @@ isShifting event = SDL.keyModifierLeftShift keyModifier || SDL.keyModifierRightS
     keyModifier = SDL.keysymModifier (SDL.keyboardEventKeysym event)
 
 rotateLeft :: State -> State
-rotateLeft state = state {stateRotation = mod' (stateRotation state - 45) 360}
+rotateLeft state =
+  state
+    { stateRotation = mod' (stateRotation state - 45) 360,
+      stateVel = V2 0 0
+    }
 
 rotateRight :: State -> State
-rotateRight state = state {stateRotation = mod' (stateRotation state + 45) 360}
+rotateRight state =
+  state
+    { stateRotation = mod' (stateRotation state + 45) 360,
+      stateVel = V2 0 0
+    }
 
 flipIt :: State -> KeyboardEventData -> State
 flipIt state event =
