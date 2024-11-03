@@ -7,8 +7,7 @@ import Control.Concurrent (threadDelay)
 import Control.Monad (unless, when)
 import Foreign.C (CInt)
 import SDL
-import System.Directory (getHomeDirectory)
-import System.FilePath ((</>))
+import Storage (savePath)
 import UI.Draw (draw)
 import UI.Events (updateEvents)
 import UI.Movement (updateMovement)
@@ -64,7 +63,8 @@ loop state renderer surface texture = do
   present renderer
   setfps
   when (stateScreenshootIt updatedState) $ do
-    homeDir <- getHomeDirectory
-    takeScreenshoot (homeDir </> "horus.png") surface updatedState
+    path <- savePath
+    takeScreenshoot path surface updatedState
+    putStrLn $ "Image saved at: " <> path
   unless (shouldQuit || stateQuit updatedState || stateScreenshootIt updatedState) $
     loop updatedState renderer surface texture

@@ -13,12 +13,15 @@ common warnings
 
 library
     import:           warnings
-    exposed-modules:  Win, UI.State, UI.Shoot, UI.Events, UI.Draw, UI.Movement
+    exposed-modules:  Storage, Win, UI.State, UI.Shoot, UI.Events, UI.Draw, UI.Movement
     build-depends:    base ^>=4.17.2.1,
                       cairo,
+                      directory,
+                      filepath,
                       managed,
                       process,
                       safe-exceptions,
+                      time,
                       X11,
                       sdl2
     hs-source-dirs:   src
@@ -30,8 +33,6 @@ executable horus
     main-is:          Main.hs
     build-depends:
         base ^>=4.17.2.1,
-        directory,
-        filepath,
         horus,
         sdl2,
         -- vector,
