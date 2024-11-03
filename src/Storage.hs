@@ -2,7 +2,8 @@
 
 module Storage (savePath) where
 
-import Data.Time (defaultTimeLocale, formatTime, getCurrentTime)
+import Data.Time (getCurrentTime, getCurrentTimeZone, utcToZonedTime)
+import Data.Time.Format.ISO8601 (iso8601Show)
 import qualified System.Directory as Dir
 import System.FilePath ((</>))
 
@@ -11,7 +12,7 @@ programName = "horus"
 
 savePath :: IO FilePath
 savePath = do
-  timestamp <- formatTime defaultTimeLocale "%y-%m-%d %H:%M:%S" <$> getCurrentTime
+  timestamp <- utcToZonedTime <$> getCurrentTimeZone <*> getCurrentTime
   dir <- Dir.getXdgDirectory Dir.XdgData programName
   Dir.createDirectoryIfMissing True dir
-  return $ dir </> timestamp <> ".png"
+  return $ dir </> iso8601Show timestamp <> ".png"
